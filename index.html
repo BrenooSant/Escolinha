@@ -1,0 +1,743 @@
+<title>Escolinha Craque do Amanhã</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --ground:#F2F4EF; --surface:#FFFFFF; --surface-2:#E9EDE4; --line:#D9DFD0;
+  --ink:#141A12; --ink-2:#4A5546; --ink-3:#7C8776;
+  --accent:#14653B; --accent-ink:#0C4526; --accent-soft:#DDEBE1;
+  --ok:#1F7A4D; --ok-bg:#DCEEE3;
+  --warn:#9C6206; --warn-bg:#F6E9CF;
+  --bad:#A8382A; --bad-bg:#F6DDD8;
+  --shadow:0 1px 2px rgba(20,26,18,.06), 0 8px 24px -18px rgba(20,26,18,.35);
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F130D; --surface:#161B13; --surface-2:#1E241B; --line:#2C3329;
+    --ink:#EAEFE5; --ink-2:#A8B2A3; --ink-3:#76806F;
+    --accent:#43A970; --accent-ink:#96E3B4; --accent-soft:#17301F;
+    --ok:#59C08A; --ok-bg:#173026;
+    --warn:#DCA344; --warn-bg:#31280F;
+    --bad:#E07965; --bad-bg:#341C18;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F130D; --surface:#161B13; --surface-2:#1E241B; --line:#2C3329;
+  --ink:#EAEFE5; --ink-2:#A8B2A3; --ink-3:#76806F;
+  --accent:#43A970; --accent-ink:#96E3B4; --accent-soft:#17301F;
+  --ok:#59C08A; --ok-bg:#173026;
+  --warn:#DCA344; --warn-bg:#31280F;
+  --bad:#E07965; --bad-bg:#341C18;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.num{font-family:Antonio,"Public Sans",sans-serif; font-weight:600; letter-spacing:.01em; margin:0}
+button{font:inherit; color:inherit; cursor:pointer; border:none; background:none}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+.eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- LOGIN ---------- */
+.auth{min-height:100vh; display:grid; grid-template-columns:1.05fr .95fr}
+.auth-art{position:relative; background:var(--accent); color:#EFF6F0; padding:40px 44px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden}
+.auth-art svg{position:absolute; inset:0; width:100%; height:100%; opacity:.5}
+.auth-art > *{position:relative}
+.crest{display:flex; align-items:center; gap:11px; font-family:Antonio,sans-serif; font-size:19px; letter-spacing:.06em; text-transform:uppercase}
+.crest .ball{width:30px; height:30px; border-radius:50%; background:#EFF6F0; color:var(--accent-ink); display:grid; place-items:center; font-size:17px; font-weight:700}
+.auth-art h1{font-size:clamp(34px,4.4vw,54px); line-height:.98; max-width:11ch; text-wrap:balance; font-weight:700}
+.auth-art p{max-width:34ch; color:#CFE3D6; margin:14px 0 0}
+.auth-facts{display:flex; gap:30px; border-top:1px solid rgba(239,246,240,.22); padding-top:18px}
+.auth-facts b{display:block; font-family:Antonio,sans-serif; font-size:26px; font-weight:600}
+.auth-facts span{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#B9D5C3}
+.auth-form{display:grid; place-items:center; padding:32px}
+.auth-card{width:100%; max-width:360px}
+.tabs{display:flex; gap:2px; background:var(--surface-2); padding:3px; border-radius:9px; margin-bottom:26px}
+.tabs button{flex:1; padding:9px; border-radius:7px; font-weight:600; font-size:13px; color:var(--ink-2)}
+.tabs button[aria-selected="true"]{background:var(--surface); color:var(--ink); box-shadow:var(--shadow)}
+.field{margin-bottom:14px}
+.field label{display:block; font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:5px}
+.field input,.field select,textarea{
+  width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+  background:var(--surface); color:var(--ink); font:inherit;
+}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 16px; border-radius:8px; font-weight:600; font-size:13px; background:var(--accent); color:#fff; transition:filter .15s}
+.btn:hover{filter:brightness(1.08)}
+.btn-ghost{background:transparent; color:var(--ink-2); border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--surface-2); filter:none}
+.btn-block{width:100%; padding:12px}
+.auth-note{margin-top:16px; font-size:12px; color:var(--ink-3); text-align:center}
+@media (max-width:820px){.auth{grid-template-columns:1fr} .auth-art{min-height:270px; padding:26px}}
+
+/* ---------- APP SHELL ---------- */
+.shell{display:grid; grid-template-columns:230px 1fr; min-height:100vh}
+.rail{background:var(--surface); border-right:1px solid var(--line); padding:20px 14px; display:flex; flex-direction:column; gap:22px; position:sticky; top:0; height:100vh}
+.rail .crest{color:var(--ink); font-size:15px}
+.rail .crest .ball{background:var(--accent); color:#fff; width:26px; height:26px; font-size:14px}
+.nav{display:flex; flex-direction:column; gap:2px}
+.nav button{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 11px; border-radius:8px; font-size:13px; font-weight:500; color:var(--ink-2); text-align:left}
+.nav button:hover{background:var(--surface-2)}
+.nav button[aria-current="page"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+.nav .pill{background:var(--bad); color:#fff; font-size:11px; font-weight:700; padding:1px 7px; border-radius:20px}
+.rail-foot{margin-top:auto; border-top:1px solid var(--line); padding-top:14px; display:flex; align-items:center; gap:10px}
+.avatar{width:32px; height:32px; border-radius:50%; background:var(--surface-2); display:grid; place-items:center; font-weight:700; font-size:12px; color:var(--ink-2)}
+.rail-foot small{display:block; color:var(--ink-3); font-size:11px}
+main{padding:26px 30px 60px; max-width:1180px}
+.page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px}
+.page-head h2{font-size:29px; line-height:1.1}
+.page-head p{margin:3px 0 0; color:var(--ink-3); font-size:13px}
+.view[hidden]{display:none}
+
+/* ---------- PEÇAS ---------- */
+.tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px 16px}
+.tile b{display:block; font-family:Antonio,sans-serif; font-size:32px; font-weight:600; line-height:1.1; margin:6px 0 2px; font-variant-numeric:tabular-nums}
+.tile small{color:var(--ink-3); font-size:12px}
+.tile.alert b{color:var(--bad)}
+.grid2{display:grid; grid-template-columns:1.4fr 1fr; gap:16px; align-items:start}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
+.panel-head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line)}
+.panel-head h3{font-size:16px}
+.panel-body{padding:16px}
+.table{width:100%; border-collapse:collapse; font-size:13px}
+.table th{text-align:left; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); padding:10px 16px; border-bottom:1px solid var(--line); font-weight:600}
+.table td{padding:11px 16px; border-bottom:1px solid var(--line)}
+.table tr:last-child td{border-bottom:none}
+.table tbody tr:hover{background:var(--surface-2)}
+.table td.r,.table th.r{text-align:right; font-variant-numeric:tabular-nums}
+.who{display:flex; align-items:center; gap:11px}
+.jersey{width:34px; height:34px; border-radius:8px; background:var(--accent-soft); color:var(--accent-ink); display:grid; place-items:center; font-family:Antonio,sans-serif; font-size:17px; font-weight:600; flex:none}
+.who b{display:block; font-weight:600; font-size:13px}
+.who small{color:var(--ink-3); font-size:12px}
+.tag{display:inline-block; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; background:var(--surface-2); color:var(--ink-2); white-space:nowrap}
+.tag.ok{background:var(--ok-bg); color:var(--ok)}
+.tag.warn{background:var(--warn-bg); color:var(--warn)}
+.tag.bad{background:var(--bad-bg); color:var(--bad)}
+.scroll{overflow-x:auto}
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+.chip{padding:6px 12px; border-radius:20px; border:1px solid var(--line); font-size:12px; font-weight:600; color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--ground); border-color:var(--ink)}
+
+/* chart */
+.chart{display:grid; grid-template-columns:repeat(6,1fr); gap:14px; align-items:end; height:180px; padding-top:8px}
+.bar{display:flex; flex-direction:column; justify-content:flex-end; height:100%; gap:6px; text-align:center}
+.bar .stack{display:flex; flex-direction:column; justify-content:flex-end; height:100%; gap:3px}
+.bar i{display:block; border-radius:3px 3px 0 0; background:var(--accent)}
+.bar i.out{background:var(--surface-2); border-radius:0 0 3px 3px}
+.bar b{font-size:11px; font-variant-numeric:tabular-nums; color:var(--ink-2); font-family:"Public Sans",sans-serif; font-weight:600}
+.bar span{font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em}
+.legend{display:flex; gap:16px; font-size:12px; color:var(--ink-3); margin-top:14px}
+.legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px}
+
+/* presença */
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{padding:6px 12px; font-size:12px; font-weight:600; color:var(--ink-3); border-right:1px solid var(--line)}
+.seg button:last-child{border-right:none}
+.seg button:hover{background:var(--surface-2)}
+.seg button[aria-pressed="true"][data-v="P"]{background:var(--ok); color:#fff}
+.seg button[aria-pressed="true"][data-v="F"]{background:var(--bad); color:#fff}
+.seg button[aria-pressed="true"][data-v="J"]{background:var(--warn); color:#fff}
+.tally{display:flex; gap:18px; font-size:13px; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.tally b{font-family:Antonio,sans-serif; font-size:19px; margin-right:5px}
+
+/* modal + toast */
+.backdrop{position:fixed; inset:0; background:rgba(10,14,9,.55); display:grid; place-items:center; padding:20px; z-index:50}
+.modal{background:var(--surface); border:1px solid var(--line); border-radius:14px; width:100%; max-width:470px; box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+.modal-head{padding:18px 20px 0}
+.modal-head h3{font-size:19px}
+.modal-head p{margin:4px 0 0; color:var(--ink-3); font-size:13px}
+.modal-body{padding:16px 20px}
+.modal-body textarea{min-height:158px; resize:vertical; line-height:1.55; font-size:13px}
+.modal-foot{display:flex; justify-content:flex-end; gap:8px; padding:0 20px 20px}
+.modal.lg{max-width:640px}
+.modal-body.scrolly{max-height:min(58vh,470px); overflow-y:auto}
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:13px}
+.form-grid .field{margin-bottom:0}
+.form-grid .span2{grid-column:1/-1}
+.form-sec{grid-column:1/-1; display:flex; align-items:center; gap:12px; margin-top:6px}
+.form-sec:first-child{margin-top:0}
+.form-sec span{white-space:nowrap}
+.form-sec hr{flex:1; border:none; border-top:1px solid var(--line); margin:0}
+.field .erro{display:none; color:var(--bad); font-size:11px; font-weight:600; margin-top:4px}
+.field.invalid input{border-color:var(--bad)}
+.field.invalid .erro{display:block}
+.field .dica{color:var(--ink-3); font-size:11px; margin-top:4px}
+.field input:disabled{background:var(--surface-2); color:var(--ink-2)}
+.check{display:flex; gap:9px; align-items:flex-start; font-size:12px; color:var(--ink-2); line-height:1.45}
+.check input{width:16px; height:16px; margin:1px 0 0; accent-color:var(--accent); flex:none}
+@media (max-width:560px){.form-grid{grid-template-columns:1fr}}
+.toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); background:var(--ink); color:var(--ground); padding:11px 18px; border-radius:24px; font-size:13px; font-weight:600; z-index:60; box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
+@media (max-width:760px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static; height:auto; flex-direction:row; align-items:center; gap:14px; overflow-x:auto}
+  .rail .rail-foot,.rail .eyebrow{display:none}
+  .nav{flex-direction:row}
+  main{padding:20px 16px 60px}
+}
+</style>
+
+<!-- ============ LOGIN ============ -->
+<div class="auth" id="auth">
+  <div class="auth-art">
+    <svg viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke="#EFF6F0" stroke-width="2" opacity=".45">
+        <rect x="24" y="24" width="352" height="552"></rect>
+        <line x1="24" y1="300" x2="376" y2="300"></line>
+        <circle cx="200" cy="300" r="66"></circle>
+        <rect x="104" y="24" width="192" height="86"></rect>
+        <rect x="152" y="24" width="96" height="38"></rect>
+        <rect x="104" y="490" width="192" height="86"></rect>
+        <rect x="152" y="538" width="96" height="38"></rect>
+      </g>
+      <circle cx="200" cy="300" r="4" fill="#EFF6F0" opacity=".6"></circle>
+    </svg>
+    <div class="crest"><span class="ball">⚽</span> Craque do Amanhã</div>
+    <div>
+      <h1>A escolinha inteira numa tela só.</h1>
+      <p>Chamada do treino, mensalidades e cobrança dos responsáveis — sem caderno, sem planilha.</p>
+    </div>
+    <div class="auth-facts">
+      <div><b class="tnum">42</b><span>Atletas</span></div>
+      <div><b class="tnum">4</b><span>Categorias</span></div>
+      <div><b class="tnum">6</b><span>Treinos/semana</span></div>
+    </div>
+  </div>
+
+  <div class="auth-form">
+    <div class="auth-card">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" id="tab-login">Entrar</button>
+        <button role="tab" aria-selected="false" id="tab-cad">Registre-se</button>
+      </div>
+
+      <h2 id="auth-title" style="font-size:24px; margin-bottom:4px">Bom treino, professor</h2>
+      <p id="auth-sub" style="color:var(--ink-3); margin:0 0 20px; font-size:13px">Acesse o painel da escolinha.</p>
+
+      <form onsubmit="entrar(event)">
+        <div class="field" id="f-nome" hidden>
+          <label for="i-nome">Nome do responsável técnico</label>
+          <input id="i-nome" placeholder="Prof. Ricardo Menezes">
+        </div>
+        <div class="field" id="f-escola" hidden>
+          <label for="i-escola">Nome da escolinha</label>
+          <input id="i-escola" placeholder="Craque do Amanhã">
+        </div>
+        <div class="field">
+          <label for="i-mail">E-mail</label>
+          <input id="i-mail" type="email" placeholder="professor@craquedoamanha.com.br">
+        </div>
+        <div class="field">
+          <label for="i-senha">Senha</label>
+          <input id="i-senha" type="password" placeholder="••••••••">
+        </div>
+        <button class="btn btn-block" type="submit" id="auth-btn">Entrar no painel</button>
+      </form>
+      <p class="auth-note">Demonstração visual — qualquer clique já entra.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="shell" id="app" hidden>
+  <aside class="rail">
+    <div class="crest"><span class="ball">⚽</span> Craque do Amanhã</div>
+    <nav class="nav" id="nav">
+      <button data-view="painel" aria-current="page">Painel</button>
+      <button data-view="alunos">Alunos</button>
+      <button data-view="presenca">Presença</button>
+      <button data-view="financeiro">Financeiro</button>
+      <button data-view="cobrancas">Cobranças <span class="pill" id="nav-pill">6</span></button>
+    </nav>
+    <div class="rail-foot">
+      <div class="avatar">RM</div>
+      <div><b style="font-size:13px">Prof. Ricardo</b><small>Coordenação</small></div>
+      <button class="btn btn-ghost" style="margin-left:auto; padding:6px 10px" onclick="sair()">Sair</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- PAINEL -->
+    <section class="view" id="v-painel">
+      <div class="page-head">
+        <div><h2>Painel</h2><p>Setembro de 2026 · Campo do Bosque, Goiânia</p></div>
+        <span class="tag">Próximo treino: hoje, 18h — Sub-13</span>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="eyebrow">Atletas ativos</span><b class="tnum" id="kpi-ativos">42</b><small>+3 matrículas no mês</small></div>
+        <div class="tile"><span class="eyebrow">Presença média</span><b class="tnum">87%</b><small>últimos 30 dias</small></div>
+        <div class="tile"><span class="eyebrow">Recebido em setembro</span><b class="tnum">R$ 4.320</b><small>32 de 42 mensalidades</small></div>
+        <div class="tile alert"><span class="eyebrow">Em atraso</span><b class="tnum">R$ 890</b><small>6 responsáveis</small></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><h3>Chamada da semana</h3><span class="tag">4 turmas</span></div>
+          <div class="scroll"><table class="table">
+            <thead><tr><th>Turma</th><th>Dia</th><th class="r">Presentes</th><th class="r">Faltas</th><th class="r">Índice</th></tr></thead>
+            <tbody id="tb-semana"></tbody>
+          </table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Aniversariantes</h3></div>
+          <div class="panel-body" style="display:flex; flex-direction:column; gap:14px">
+            <div class="who"><span class="jersey">10</span><div><b>Arthur Nogueira</b><small>Sub-11 · 12 anos em 14/09</small></div></div>
+            <div class="who"><span class="jersey">7</span><div><b>Lívia Prado</b><small>Sub-13 · 13 anos em 21/09</small></div></div>
+            <div class="who"><span class="jersey">4</span><div><b>Enzo Batista</b><small>Sub-9 · 10 anos em 29/09</small></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ALUNOS -->
+    <section class="view" id="v-alunos" hidden>
+      <div class="page-head">
+        <div><h2>Alunos</h2><p id="sub-alunos">42 atletas matriculados em 4 categorias</p></div>
+        <button class="btn" onclick="abrirNovoAluno()">+ Novo aluno</button>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="chips" id="chips-cat"></div>
+          <span class="tag" id="cont-alunos"></span>
+        </div>
+        <div class="scroll"><table class="table">
+          <thead><tr><th>Atleta</th><th>Categoria</th><th>Posição</th><th>Responsável</th><th>Contato</th><th class="r">Mensalidade</th></tr></thead>
+          <tbody id="tb-alunos"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- PRESENÇA -->
+    <section class="view" id="v-presenca" hidden>
+      <div class="page-head">
+        <div><h2>Presença</h2><p>Treino de quarta-feira, 02/09/2026 · 18h00 · Campo do Bosque</p></div>
+        <button class="btn" onclick="toast('Chamada salva')">Salvar chamada</button>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="chips" id="chips-turma"></div>
+          <div class="tally" id="tally"></div>
+        </div>
+        <div class="scroll"><table class="table">
+          <thead><tr><th>Atleta</th><th>Frequência no mês</th><th class="r">Marcação</th></tr></thead>
+          <tbody id="tb-presenca"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- FINANCEIRO -->
+    <section class="view" id="v-financeiro" hidden>
+      <div class="page-head">
+        <div><h2>Financeiro</h2><p>Balanço de abril a setembro de 2026</p></div>
+        <button class="btn btn-ghost" onclick="toast('Relatório exportado')">Exportar relatório</button>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="eyebrow">Entradas no mês</span><b class="tnum" style="color:var(--ok)">R$ 4.320</b><small>mensalidades + uniformes</small></div>
+        <div class="tile"><span class="eyebrow">Saídas no mês</span><b class="tnum">R$ 2.510</b><small>campo, material, arbitragem</small></div>
+        <div class="tile"><span class="eyebrow">Saldo</span><b class="tnum">R$ 1.810</b><small>+18% sobre agosto</small></div>
+        <div class="tile alert"><span class="eyebrow">A receber</span><b class="tnum">R$ 890</b><small>6 mensalidades vencidas</small></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><h3>Entradas x saídas</h3><span class="tag">R$ mil</span></div>
+          <div class="panel-body">
+            <div class="chart" id="chart"></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Entradas</span><span><i style="background:var(--surface-2)"></i>Saídas</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Últimos lançamentos</h3></div>
+          <div class="scroll"><table class="table"><tbody id="tb-lanc"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COBRANÇAS -->
+    <section class="view" id="v-cobrancas" hidden>
+      <div class="page-head">
+        <div><h2>Cobranças</h2><p>6 responsáveis com mensalidade vencida — total de R$ 890,00</p></div>
+        <button class="btn" onclick="toast('Lembrete enviado para os 6 responsáveis')">Cobrar todos</button>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Em aberto</h3><span class="tag bad">Vencidas</span></div>
+        <div class="scroll"><table class="table">
+          <thead><tr><th>Atleta</th><th>Responsável</th><th>Venceu em</th><th>Atraso</th><th class="r">Valor</th><th class="r">Lembrete</th></tr></thead>
+          <tbody id="tb-cobrancas"></tbody>
+        </table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ---------------- dados de demonstração ---------------- */
+var MENS = {"Sub-9":120, "Sub-11":130, "Sub-13":140, "Sub-15":150};
+var alunos = [
+  {n:"Arthur Nogueira",  num:10, cat:"Sub-11", pos:"Meia",     resp:"Marcela Nogueira", tel:"(62) 99184-2210", st:"atraso", dias:12, freq:"11/12"},
+  {n:"Bernardo Lima",    num:9,  cat:"Sub-11", pos:"Atacante", resp:"Cláudio Lima",     tel:"(62) 99623-8814", st:"pago",   dias:0,  freq:"12/12"},
+  {n:"Lívia Prado",      num:7,  cat:"Sub-13", pos:"Ponta",    resp:"Renata Prado",     tel:"(62) 98110-4477", st:"pago",   dias:0,  freq:"10/12"},
+  {n:"Enzo Batista",     num:4,  cat:"Sub-9",  pos:"Zagueiro", resp:"Patrícia Batista", tel:"(62) 99442-0193", st:"atraso", dias:7,  freq:"9/12"},
+  {n:"Miguel Tavares",   num:1,  cat:"Sub-15", pos:"Goleiro",  resp:"Sandro Tavares",   tel:"(62) 99871-3025", st:"vence",  dias:0,  freq:"12/12"},
+  {n:"Heitor Camargo",   num:8,  cat:"Sub-13", pos:"Volante",  resp:"Aline Camargo",    tel:"(62) 98274-6612", st:"atraso", dias:21, freq:"7/12"},
+  {n:"Manuela Reis",     num:11, cat:"Sub-11", pos:"Ponta",    resp:"Douglas Reis",     tel:"(62) 99065-7788", st:"pago",   dias:0,  freq:"12/12"},
+  {n:"Davi Fontes",      num:5,  cat:"Sub-15", pos:"Zagueiro", resp:"Juliana Fontes",   tel:"(62) 99310-5521", st:"atraso", dias:4,  freq:"11/12"},
+  {n:"Théo Andrade",     num:6,  cat:"Sub-9",  pos:"Meia",     resp:"Fabiano Andrade",  tel:"(62) 98899-1204", st:"pago",   dias:0,  freq:"8/12"},
+  {n:"Isabela Moura",    num:2,  cat:"Sub-13", pos:"Lateral",  resp:"Simone Moura",     tel:"(62) 99727-3390", st:"vence",  dias:0,  freq:"12/12"},
+  {n:"Lucas Pereira",    num:3,  cat:"Sub-15", pos:"Lateral",  resp:"Rogério Pereira",  tel:"(62) 99558-1147", st:"atraso", dias:33, freq:"5/12"},
+  {n:"Pedro Vasques",    num:14, cat:"Sub-9",  pos:"Atacante", resp:"Camila Vasques",   tel:"(62) 98003-2266", st:"pago",   dias:0,  freq:"12/12"},
+  {n:"Rafael Duarte",    num:16, cat:"Sub-13", pos:"Goleiro",  resp:"Vanessa Duarte",   tel:"(62) 99441-9083", st:"atraso", dias:9,  freq:"10/12"},
+  {n:"Yuri Nascimento",  num:12, cat:"Sub-15", pos:"Meia",     resp:"Marcos Nascimento",tel:"(62) 99612-4470", st:"pago",   dias:0,  freq:"11/12"}
+];
+var TAGS = {pago:['ok','Em dia'], vence:['warn','Vence em 05/10'], atraso:['bad','Atrasada']};
+
+/* ---------------- login ---------------- */
+var modoCadastro = false;
+document.getElementById('tab-login').onclick = function(){ setModo(false); };
+document.getElementById('tab-cad').onclick  = function(){ setModo(true); };
+function setModo(cad){
+  modoCadastro = cad;
+  document.getElementById('tab-login').setAttribute('aria-selected', String(!cad));
+  document.getElementById('tab-cad').setAttribute('aria-selected', String(cad));
+  document.getElementById('f-nome').hidden = !cad;
+  document.getElementById('f-escola').hidden = !cad;
+  document.getElementById('auth-title').textContent = cad ? 'Crie a sua escolinha' : 'Bom treino, professor';
+  document.getElementById('auth-sub').textContent = cad ? 'Leva menos de um minuto para começar.' : 'Acesse o painel da escolinha.';
+  document.getElementById('auth-btn').textContent = cad ? 'Criar conta e entrar' : 'Entrar no painel';
+}
+function entrar(e){
+  if(e) e.preventDefault();
+  document.getElementById('auth').hidden = true;
+  document.getElementById('app').hidden = false;
+  window.scrollTo(0,0);
+  if(modoCadastro) toast('Escolinha criada — bem-vindo!');
+}
+function sair(){
+  document.getElementById('app').hidden = true;
+  document.getElementById('auth').hidden = false;
+  window.scrollTo(0,0);
+}
+
+/* ---------------- navegação ---------------- */
+document.getElementById('nav').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-view]'); if(!b) return;
+  Array.prototype.forEach.call(this.querySelectorAll('button'), function(x){ x.removeAttribute('aria-current'); });
+  b.setAttribute('aria-current','page');
+  Array.prototype.forEach.call(document.querySelectorAll('.view'), function(v){ v.hidden = true; });
+  document.getElementById('v-'+b.dataset.view).hidden = false;
+  window.scrollTo(0,0);
+});
+
+/* ---------------- painel ---------------- */
+var semana = [
+  ['Sub-9','Segunda 17h',14,2],['Sub-11','Terça 18h',16,1],
+  ['Sub-13','Quarta 18h',9,3],['Sub-15','Quinta 19h',11,2]
+];
+document.getElementById('tb-semana').innerHTML = semana.map(function(r){
+  var idx = Math.round(r[2]/(r[2]+r[3])*100);
+  var cls = idx >= 85 ? 'ok' : (idx >= 75 ? 'warn' : 'bad');
+  return '<tr><td><b>'+r[0]+'</b></td><td style="color:var(--ink-3)">'+r[1]+'</td>'+
+    '<td class="r">'+r[2]+'</td><td class="r">'+r[3]+'</td>'+
+    '<td class="r"><span class="tag '+cls+'">'+idx+'%</span></td></tr>';
+}).join('');
+
+/* ---------------- alunos ---------------- */
+var catAtual = 'Todas';
+var cats = ['Todas','Sub-9','Sub-11','Sub-13','Sub-15'];
+document.getElementById('chips-cat').innerHTML = cats.map(function(c){
+  return '<button class="chip" aria-pressed="'+(c===catAtual)+'" data-c="'+c+'">'+c+'</button>';
+}).join('');
+document.getElementById('chips-cat').addEventListener('click', function(e){
+  var b = e.target.closest('.chip'); if(!b) return;
+  catAtual = b.dataset.c;
+  Array.prototype.forEach.call(this.querySelectorAll('.chip'), function(x){ x.setAttribute('aria-pressed', String(x.dataset.c===catAtual)); });
+  renderAlunos();
+});
+function renderAlunos(){
+  var lista = alunos.filter(function(a){ return catAtual==='Todas' || a.cat===catAtual; });
+  document.getElementById('cont-alunos').textContent = lista.length + ' atletas';
+  document.getElementById('tb-alunos').innerHTML = lista.map(function(a){
+    var t = TAGS[a.st];
+    return '<tr><td><div class="who"><span class="jersey">'+a.num+'</span><div><b>'+a.n+'</b>'+
+      '<small>'+a.freq+' treinos no mês</small></div></div></td>'+
+      '<td><span class="tag">'+a.cat+'</span></td><td style="color:var(--ink-2)">'+a.pos+'</td>'+
+      '<td>'+a.resp+'</td><td class="tnum" style="color:var(--ink-3)">'+a.tel+'</td>'+
+      '<td class="r"><b class="tnum">R$ '+MENS[a.cat]+',00</b><br><span class="tag '+t[0]+'">'+t[1]+'</span></td></tr>';
+  }).join('');
+}
+renderAlunos();
+
+/* ---------------- presença ---------------- */
+var turmaAtual = 'Sub-13';
+var marcas = {};
+alunos.forEach(function(a){ marcas[a.n] = 'P'; });
+marcas['Heitor Camargo'] = 'F'; marcas['Lucas Pereira'] = 'J';
+document.getElementById('chips-turma').innerHTML = ['Sub-9','Sub-11','Sub-13','Sub-15'].map(function(c){
+  return '<button class="chip" aria-pressed="'+(c===turmaAtual)+'" data-t="'+c+'">'+c+'</button>';
+}).join('');
+document.getElementById('chips-turma').addEventListener('click', function(e){
+  var b = e.target.closest('.chip'); if(!b) return;
+  turmaAtual = b.dataset.t;
+  Array.prototype.forEach.call(this.querySelectorAll('.chip'), function(x){ x.setAttribute('aria-pressed', String(x.dataset.t===turmaAtual)); });
+  renderPresenca();
+});
+function renderPresenca(){
+  var lista = alunos.filter(function(a){ return a.cat===turmaAtual; });
+  document.getElementById('tb-presenca').innerHTML = lista.map(function(a){
+    var m = marcas[a.n];
+    return '<tr><td><div class="who"><span class="jersey">'+a.num+'</span><div><b>'+a.n+'</b><small>'+a.pos+'</small></div></div></td>'+
+      '<td style="color:var(--ink-2)" class="tnum">'+a.freq+' treinos</td>'+
+      '<td class="r"><div class="seg" data-aluno="'+a.n+'">'+
+        ['P','F','J'].map(function(v){
+          var rot = {P:'Presente',F:'Falta',J:'Justificada'}[v];
+          return '<button data-v="'+v+'" aria-pressed="'+(m===v)+'">'+rot+'</button>';
+        }).join('')+
+      '</div></td></tr>';
+  }).join('');
+  var p=0,f=0,j=0;
+  lista.forEach(function(a){ var m=marcas[a.n]; if(m==='P')p++; else if(m==='F')f++; else j++; });
+  document.getElementById('tally').innerHTML =
+    '<span><b style="color:var(--ok)">'+p+'</b>presentes</span>'+
+    '<span><b style="color:var(--bad)">'+f+'</b>faltas</span>'+
+    '<span><b style="color:var(--warn)">'+j+'</b>justificadas</span>';
+}
+document.getElementById('tb-presenca').addEventListener('click', function(e){
+  var b = e.target.closest('.seg button'); if(!b) return;
+  marcas[b.closest('.seg').dataset.aluno] = b.dataset.v;
+  renderPresenca();
+});
+renderPresenca();
+
+/* ---------------- financeiro ---------------- */
+var meses = [
+  ['Abr',3.9,2.4],['Mai',4.1,2.6],['Jun',4.0,2.2],
+  ['Jul',3.6,2.8],['Ago',4.2,2.3],['Set',4.32,2.51]
+];
+var teto = 7.2;
+document.getElementById('chart').innerHTML = meses.map(function(m){
+  return '<div class="bar"><b class="tnum">'+m[1].toFixed(1)+'</b><div class="stack">'+
+    '<i style="height:'+(m[1]/teto*100)+'%"></i>'+
+    '<i class="out" style="height:'+(m[2]/teto*100)+'%"></i>'+
+    '</div><span>'+m[0]+'</span></div>';
+}).join('');
+var lancamentos = [
+  ['Mensalidades Sub-11','02/09','+ R$ 1.170','ok'],
+  ['Aluguel do campo','01/09','− R$ 1.400',''],
+  ['Kit uniforme (8 un.)','30/08','+ R$ 640','ok'],
+  ['Bolas e coletes','28/08','− R$ 480',''],
+  ['Mensalidades Sub-15','26/08','+ R$ 900','ok'],
+  ['Arbitragem amistoso','24/08','− R$ 230','']
+];
+document.getElementById('tb-lanc').innerHTML = lancamentos.map(function(l){
+  return '<tr><td><b>'+l[0]+'</b><br><small style="color:var(--ink-3)">'+l[1]+'</small></td>'+
+    '<td class="r tnum" style="font-weight:600;'+(l[3]==='ok'?'color:var(--ok)':'color:var(--ink-2)')+'">'+l[2]+'</td></tr>';
+}).join('');
+
+/* ---------------- cobranças ---------------- */
+var devedores = alunos.filter(function(a){ return a.st==='atraso'; });
+document.getElementById('nav-pill').textContent = devedores.length;
+document.getElementById('tb-cobrancas').innerHTML = devedores.map(function(a,i){
+  var venc = new Date(2026,8,5); venc.setDate(venc.getDate()-0);
+  return '<tr><td><div class="who"><span class="jersey">'+a.num+'</span><div><b>'+a.n+'</b><small>'+a.cat+'</small></div></div></td>'+
+    '<td><b>'+a.resp+'</b><br><small class="tnum" style="color:var(--ink-3)">'+a.tel+'</small></td>'+
+    '<td class="tnum" style="color:var(--ink-2)">05/09/2026</td>'+
+    '<td><span class="tag '+(a.dias>14?'bad':'warn')+'">'+a.dias+' dias</span></td>'+
+    '<td class="r tnum"><b>R$ '+MENS[a.cat]+',00</b></td>'+
+    '<td class="r"><button class="btn" style="padding:7px 12px" onclick="abrirCobranca('+i+')">Enviar lembrete</button></td></tr>';
+}).join('');
+
+function abrirCobranca(i){
+  var a = devedores[i];
+  var msg = 'Olá, '+a.resp.split(' ')[0]+'! Aqui é da Escolinha Craque do Amanhã ⚽\n\n'+
+    'Passando para lembrar que a mensalidade do(a) '+a.n.split(' ')[0]+' ('+a.cat+'), referente a setembro, venceu em 05/09 e está com '+a.dias+' dias de atraso.\n\n'+
+    'Valor: R$ '+MENS[a.cat]+',00\nPIX (CNPJ): 12.345.678/0001-90\n\n'+
+    'Assim que pagar, é só mandar o comprovante por aqui. Qualquer dificuldade a gente conversa e parcela. Obrigado!\n\n— Prof. Ricardo';
+  var el = document.createElement('div');
+  el.className = 'backdrop';
+  el.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-label="Enviar lembrete">'+
+    '<div class="modal-head"><h3>Lembrete para '+a.resp+'</h3>'+
+    '<p>WhatsApp '+a.tel+' · responsável por '+a.n+'</p></div>'+
+    '<div class="modal-body"><textarea id="msg-cobranca">'+msg+'</textarea></div>'+
+    '<div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button>'+
+    '<button class="btn" data-send>Enviar no WhatsApp</button></div></div>';
+  el.addEventListener('click', function(e){
+    if(e.target === el || e.target.hasAttribute('data-x')) el.remove();
+    if(e.target.hasAttribute('data-send')){ el.remove(); toast('Mensagem enviada para '+a.resp.split(' ')[0]); }
+  });
+  document.body.appendChild(el);
+}
+
+/* ---------------- novo aluno ---------------- */
+var POSICOES = ['Goleiro','Zagueiro','Lateral','Volante','Meia','Ponta','Atacante'];
+var ativos = 42;
+
+function opts(lista, sel){
+  return lista.map(function(o){
+    return '<option'+(o===sel?' selected':'')+'>'+o+'</option>';
+  }).join('');
+}
+
+function abrirNovoAluno(){
+  var sugerido = 2;
+  var usados = alunos.map(function(a){ return a.num; });
+  while(usados.indexOf(sugerido) > -1) sugerido++;
+
+  var el = document.createElement('div');
+  el.className = 'backdrop';
+  el.innerHTML = `<div class="modal lg" role="dialog" aria-modal="true" aria-labelledby="na-titulo">
+    <div class="modal-head">
+      <h3 id="na-titulo">Matricular atleta</h3>
+      <p>A ficha entra na turma e na chamada do próximo treino.</p>
+    </div>
+    <form id="na-form" novalidate>
+      <div class="modal-body scrolly">
+        <div class="form-grid">
+
+          <div class="form-sec"><span class="eyebrow">Atleta</span><hr></div>
+          <div class="field span2">
+            <label for="na-nome">Nome completo</label>
+            <input id="na-nome" placeholder="Gabriel Souza Antunes" autocomplete="off">
+            <div class="erro">Informe o nome do atleta.</div>
+          </div>
+          <div class="field">
+            <label for="na-nasc">Data de nascimento</label>
+            <input id="na-nasc" type="date" value="2015-03-12">
+          </div>
+          <div class="field">
+            <label for="na-cat">Categoria</label>
+            <select id="na-cat">${opts(['Sub-9','Sub-11','Sub-13','Sub-15'],'Sub-11')}</select>
+          </div>
+          <div class="field">
+            <label for="na-pos">Posição</label>
+            <select id="na-pos">${opts(POSICOES,'Meia')}</select>
+          </div>
+          <div class="field">
+            <label for="na-num">Número da camisa</label>
+            <input id="na-num" type="number" min="1" max="99" value="${sugerido}">
+            <div class="dica">Livres na escolinha: ${sugerido}, ${sugerido+1}, ${sugerido+2}</div>
+          </div>
+          <div class="field span2">
+            <label for="na-pe">Pé dominante</label>
+            <select id="na-pe">${opts(['Direito','Esquerdo','Ambidestro'],'Direito')}</select>
+          </div>
+
+          <div class="form-sec"><span class="eyebrow">Responsável</span><hr></div>
+          <div class="field">
+            <label for="na-resp">Nome do responsável</label>
+            <input id="na-resp" placeholder="Cristiane Antunes" autocomplete="off">
+            <div class="erro">Informe quem responde pelo atleta.</div>
+          </div>
+          <div class="field">
+            <label for="na-par">Parentesco</label>
+            <select id="na-par">${opts(['Mãe','Pai','Avó / Avô','Tio / Tia','Responsável legal'],'Mãe')}</select>
+          </div>
+          <div class="field">
+            <label for="na-tel">WhatsApp</label>
+            <input id="na-tel" placeholder="(62) 99000-0000" inputmode="tel">
+            <div class="dica">É por aqui que sai o lembrete de mensalidade.</div>
+          </div>
+          <div class="field">
+            <label for="na-mail">E-mail (opcional)</label>
+            <input id="na-mail" type="email" placeholder="cristiane@email.com">
+          </div>
+
+          <div class="form-sec"><span class="eyebrow">Mensalidade</span><hr></div>
+          <div class="field">
+            <label for="na-valor">Valor da categoria</label>
+            <input id="na-valor" value="R$ 130,00" disabled>
+          </div>
+          <div class="field">
+            <label for="na-venc">Vence todo dia</label>
+            <select id="na-venc">${opts(['05','10','15','20'],'05')}</select>
+          </div>
+          <div class="field span2">
+            <label for="na-saude">Observações de saúde</label>
+            <textarea id="na-saude" style="min-height:64px" placeholder="Alergias, uso de medicação, restrições — o que o professor precisa saber em campo."></textarea>
+          </div>
+          <label class="check span2">
+            <input type="checkbox" id="na-img" checked>
+            <span>O responsável autoriza o uso de imagem do atleta em fotos e vídeos da escolinha.</span>
+          </label>
+
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-x>Cancelar</button>
+        <button type="submit" class="btn">Matricular atleta</button>
+      </div>
+    </form>
+  </div>`;
+
+  document.body.appendChild(el);
+  var q = function(id){ return el.querySelector(id); };
+  q('#na-nome').focus();
+
+  function fechar(){ el.remove(); document.removeEventListener('keydown', esc); }
+  function esc(e){ if(e.key === 'Escape') fechar(); }
+  document.addEventListener('keydown', esc);
+  el.addEventListener('click', function(e){
+    if(e.target === el || e.target.hasAttribute('data-x')) fechar();
+  });
+
+  q('#na-cat').addEventListener('change', function(){
+    q('#na-valor').value = 'R$ ' + MENS[this.value] + ',00';
+  });
+  Array.prototype.forEach.call(el.querySelectorAll('.field input'), function(i){
+    i.addEventListener('input', function(){ i.closest('.field').classList.remove('invalid'); });
+  });
+
+  q('#na-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = q('#na-nome').value.trim();
+    var resp = q('#na-resp').value.trim();
+    var falhou = false;
+    if(nome.length < 3){ q('#na-nome').closest('.field').classList.add('invalid'); falhou = true; }
+    if(resp.length < 3){ q('#na-resp').closest('.field').classList.add('invalid'); falhou = true; }
+    if(falhou){ el.querySelector('.invalid input').focus(); return; }
+
+    var cat = q('#na-cat').value;
+    alunos.unshift({
+      n: nome,
+      num: parseInt(q('#na-num').value, 10) || sugerido,
+      cat: cat,
+      pos: q('#na-pos').value,
+      resp: resp,
+      tel: q('#na-tel').value.trim() || '(62) 90000-0000',
+      st: 'vence',
+      dias: 0,
+      freq: '0/12'
+    });
+    marcas[nome] = 'P';
+    ativos++;
+    document.getElementById('kpi-ativos').textContent = ativos;
+    document.getElementById('sub-alunos').textContent = ativos + ' atletas matriculados em 4 categorias';
+
+    catAtual = cat;
+    Array.prototype.forEach.call(document.querySelectorAll('#chips-cat .chip'), function(x){
+      x.setAttribute('aria-pressed', String(x.dataset.c === catAtual));
+    });
+    renderAlunos();
+    renderPresenca();
+
+    fechar();
+    toast(nome.split(' ')[0] + ' matriculado no ' + cat);
+  });
+}
+
+/* ---------------- toast ---------------- */
+var toastTimer;
+function toast(txt){
+  var old = document.querySelector('.toast'); if(old) old.remove();
+  var t = document.createElement('div'); t.className='toast'; t.textContent = txt;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.remove(); }, 2600);
+}
+</script>
