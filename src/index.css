@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* ---------- paleta (claro) ---------- */
+:root {
+  --c-ground: #f2f4ef;
+  --c-surface: #ffffff;
+  --c-surface2: #e9ede4;
+  --c-line: #d9dfd0;
+  --c-ink: #141a12;
+  --c-ink2: #4a5546;
+  --c-ink3: #7c8776;
+  --c-accent: #14653b;
+  --c-accent-ink: #0c4526;
+  --c-accent-soft: #ddebe1;
+  --c-ok: #1f7a4d;
+  --c-ok-bg: #dceee3;
+  --c-warn: #9c6206;
+  --c-warn-bg: #f6e9cf;
+  --c-bad: #a8382a;
+  --c-bad-bg: #f6ddd8;
+}
+
+/* ---------- paleta (escuro) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-ground: #0f130d;
+    --c-surface: #161b13;
+    --c-surface2: #1e241b;
+    --c-line: #2c3329;
+    --c-ink: #eaefe5;
+    --c-ink2: #a8b2a3;
+    --c-ink3: #76806f;
+    --c-accent: #43a970;
+    --c-accent-ink: #96e3b4;
+    --c-accent-soft: #17301f;
+    --c-ok: #59c08a;
+    --c-ok-bg: #173026;
+    --c-warn: #dca344;
+    --c-warn-bg: #31280f;
+    --c-bad: #e07965;
+    --c-bad-bg: #341c18;
+  }
+}
+
+/* `inline` faz o Tailwind emitir a referência à variável,
+   então as cores trocam sozinhas no modo escuro. */
+@theme inline {
+  --color-ground: var(--c-ground);
+  --color-surface: var(--c-surface);
+  --color-surface2: var(--c-surface2);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-ink2: var(--c-ink2);
+  --color-ink3: var(--c-ink3);
+  --color-accent: var(--c-accent);
+  --color-accentink: var(--c-accent-ink);
+  --color-accentsoft: var(--c-accent-soft);
+  --color-ok: var(--c-ok);
+  --color-okbg: var(--c-ok-bg);
+  --color-warn: var(--c-warn);
+  --color-warnbg: var(--c-warn-bg);
+  --color-bad: var(--c-bad);
+  --color-badbg: var(--c-bad-bg);
+
+  --font-sans: "Public Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Antonio", "Public Sans", sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ground text-ink font-sans text-[14px] leading-normal antialiased;
+    margin: 0;
+    /* nada de rolagem lateral acidental no celular */
+    overflow-x: hidden;
+  }
+  h1, h2, h3 {
+    @apply font-display font-semibold;
+    margin: 0;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent rounded-sm;
+  }
+  /* iOS dá zoom no foco quando a fonte do campo é menor que 16px */
+  input, select, textarea {
+    font: inherit;
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input, select, textarea { font-size: 14px; }
+  }
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* respeita quem desligou animações no sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* barra de rolagem discreta nas faixas horizontais */
+.no-bar {
+  scrollbar-width: none;
+}
+.no-bar::-webkit-scrollbar {
+  display: none;
+}
