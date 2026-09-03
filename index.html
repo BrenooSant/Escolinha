@@ -140,16 +140,127 @@ main{padding:26px 30px 60px; max-width:1180px}
 .legend{display:flex; gap:16px; font-size:12px; color:var(--ink-3); margin-top:14px}
 .legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px}
 
-/* presença */
-.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
-.seg button{padding:6px 12px; font-size:12px; font-weight:600; color:var(--ink-3); border-right:1px solid var(--line)}
+/* ---------- CHAMADA ---------- */
+.head-actions{display:flex; gap:8px; flex-wrap:wrap}
+
+/* barra da sessão de treino */
+.sessao{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px; display:flex; gap:26px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px}
+.sessao .campo{display:flex; flex-direction:column; gap:6px}
+.sessao .campo input,.sessao .campo select{padding:8px 11px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-size:13px; font-weight:600}
+.sessao .sep{width:1px; align-self:stretch; background:var(--line)}
+
+/* progresso da chamada */
+.chamada-top{display:flex; align-items:center; gap:20px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.prog{flex:1; min-width:220px}
+.prog-lbl{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:7px}
+.prog-lbl b{font-size:13px; font-weight:600}
+.prog-lbl span{font-size:12px; color:var(--ink-3)}
+.prog-bar{height:7px; border-radius:20px; background:var(--surface-2); overflow:hidden; display:flex}
+.prog-bar i{display:block; height:100%; transition:width .25s}
+.prog-bar i.p{background:var(--ok)} .prog-bar i.f{background:var(--bad)} .prog-bar i.j{background:var(--warn)}
+.chamada-acoes{display:flex; gap:8px; flex-wrap:wrap}
+.chamada-acoes .btn{padding:8px 13px}
+
+/* placar da chamada */
+.placar{display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--line)}
+.placar div{padding:13px 16px; border-right:1px solid var(--line)}
+.placar div:last-child{border-right:none}
+.placar b{display:block; font-family:Antonio,sans-serif; font-size:27px; font-weight:600; line-height:1.15; font-variant-numeric:tabular-nums}
+.placar span{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+@media (max-width:620px){.placar{grid-template-columns:repeat(2,1fr)} .placar div{border-bottom:1px solid var(--line)}}
+
+/* cartões de atleta na chamada */
+.lista-chamada{display:flex; flex-direction:column}
+.ath{display:flex; align-items:center; gap:14px; padding:12px 16px 12px 13px; border-bottom:1px solid var(--line); border-left:3px solid transparent; transition:background .15s}
+.ath:last-child{border-bottom:none}
+.ath:hover{background:var(--surface-2)}
+.ath[data-st=""]{border-left-color:var(--line); background:repeating-linear-gradient(135deg,transparent 0 9px,rgba(124,135,118,.055) 9px 18px)}
+.ath[data-st="P"]{border-left-color:var(--ok)}
+.ath[data-st="F"]{border-left-color:var(--bad)}
+.ath[data-st="J"]{border-left-color:var(--warn)}
+.ath-info{flex:1; min-width:0}
+.ath-info b{display:block; font-size:13.5px; font-weight:600}
+.ath-info small{color:var(--ink-3); font-size:12px}
+.ath-freq{display:flex; align-items:center; gap:8px; margin-top:5px; max-width:210px}
+.ath-freq .fbar{flex:1; height:4px; border-radius:20px; background:var(--surface-2); overflow:hidden}
+.ath-freq .fbar i{display:block; height:100%; background:var(--accent)}
+.ath-freq .fbar i.low{background:var(--bad)}
+.ath-freq em{font-style:normal; font-size:11px; font-weight:600; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.ath-lado{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+.ath .just{padding:6px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink-2); font:inherit; font-size:12px}
+@media (max-width:700px){.ath{flex-wrap:wrap} .ath-lado{width:100%; justify-content:flex-start; padding-left:48px}}
+
+/* botões P / F / J */
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--surface)}
+.seg button{display:flex; align-items:center; gap:6px; padding:9px 14px; font-size:12.5px; font-weight:600; color:var(--ink-3); border-right:1px solid var(--line); transition:background .12s, color .12s}
 .seg button:last-child{border-right:none}
-.seg button:hover{background:var(--surface-2)}
+.seg button:hover{background:var(--surface-2); color:var(--ink)}
+.seg button i{width:15px; height:15px; border-radius:50%; border:1.5px solid currentColor; display:grid; place-items:center; font-size:9px; font-style:normal; opacity:.55}
+.seg button[aria-pressed="true"] i{opacity:1; border-color:currentColor; background:rgba(255,255,255,.22)}
 .seg button[aria-pressed="true"][data-v="P"]{background:var(--ok); color:#fff}
 .seg button[aria-pressed="true"][data-v="F"]{background:var(--bad); color:#fff}
 .seg button[aria-pressed="true"][data-v="J"]{background:var(--warn); color:#fff}
-.tally{display:flex; gap:18px; font-size:13px; color:var(--ink-2); font-variant-numeric:tabular-nums}
-.tally b{font-family:Antonio,sans-serif; font-size:19px; margin-right:5px}
+
+/* histórico de chamadas */
+.hist{display:flex; gap:10px; overflow-x:auto; padding:16px}
+.hist div{flex:none; min-width:96px; border:1px solid var(--line); border-radius:9px; padding:10px 12px}
+.hist b{display:block; font-family:Antonio,sans-serif; font-size:21px; font-weight:600; font-variant-numeric:tabular-nums}
+.hist small{display:block; color:var(--ink-3); font-size:11px; margin-bottom:3px}
+.hist span{font-size:11px; color:var(--ink-3)}
+
+/* ---------- AGENDA ---------- */
+.agenda{display:grid; grid-template-columns:repeat(6,1fr); gap:10px}
+@media (max-width:1000px){.agenda{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:620px){.agenda{grid-template-columns:repeat(2,1fr)}}
+.dia{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:12px; min-height:150px}
+.dia > .eyebrow{display:block; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+.dia.hoje{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+.dia.hoje > .eyebrow{color:var(--accent)}
+.treino{background:var(--accent-soft); border-radius:8px; padding:9px 10px; margin-bottom:8px}
+.treino b{display:block; font-family:Antonio,sans-serif; font-size:16px; font-weight:600; color:var(--accent-ink)}
+.treino small{display:block; color:var(--ink-2); font-size:11.5px}
+.treino.jogo{background:var(--warn-bg)} .treino.jogo b{color:var(--warn)}
+.dia .vazio{color:var(--ink-3); font-size:12px; font-style:italic}
+
+/* ---------- AÇÕES RÁPIDAS / ALERTAS ---------- */
+.quick{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:22px}
+@media (max-width:900px){.quick{grid-template-columns:repeat(2,1fr)}}
+.quick button{display:flex; align-items:center; gap:11px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:13px 14px; transition:border-color .15s, transform .15s}
+.quick button:hover{border-color:var(--accent); transform:translateY(-1px)}
+.quick .ic{width:32px; height:32px; border-radius:9px; background:var(--accent-soft); color:var(--accent-ink); display:grid; place-items:center; font-size:15px; flex:none}
+.quick b{display:block; font-family:"Public Sans",sans-serif; font-size:13px; font-weight:600}
+.quick small{color:var(--ink-3); font-size:11.5px}
+.alertas{display:flex; flex-direction:column}
+.alerta{display:flex; gap:12px; align-items:flex-start; padding:13px 16px; border-bottom:1px solid var(--line)}
+.alerta:last-child{border-bottom:none}
+.alerta .dot{width:8px; height:8px; border-radius:50%; margin-top:6px; flex:none}
+.alerta b{display:block; font-size:13px; font-weight:600}
+.alerta small{color:var(--ink-3); font-size:12px}
+.alerta button{margin-left:auto; font-size:12px; font-weight:600; color:var(--accent); white-space:nowrap; align-self:center}
+.alerta button:hover{text-decoration:underline}
+
+/* busca */
+.busca{position:relative; flex:1; max-width:280px}
+.busca input{width:100%; padding:8px 12px 8px 32px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-size:13px}
+.busca::before{content:"⌕"; position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--ink-3); font-size:15px}
+.clicavel{cursor:pointer}
+.vazio-msg{padding:34px 16px; text-align:center; color:var(--ink-3); font-size:13px}
+
+/* ficha do atleta */
+.ficha-top{display:flex; gap:14px; align-items:center; padding:18px 20px; border-bottom:1px solid var(--line)}
+.ficha-top .jersey{width:52px; height:52px; border-radius:12px; font-size:25px}
+.ficha-top h3{font-size:20px}
+.ficha-top small{color:var(--ink-3); font-size:12.5px}
+.ficha-kpis{display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line)}
+.ficha-kpis div{padding:13px 20px; border-right:1px solid var(--line)}
+.ficha-kpis div:last-child{border-right:none}
+.ficha-kpis b{display:block; font-family:Antonio,sans-serif; font-size:23px; font-weight:600; font-variant-numeric:tabular-nums}
+.ficha-kpis span{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+.dl{display:grid; grid-template-columns:132px 1fr; gap:9px 14px; font-size:13px}
+.dl dt{color:var(--ink-3)} .dl dd{margin:0; font-weight:500}
+.pontos{display:flex; gap:4px; flex-wrap:wrap; margin-top:4px}
+.pontos i{width:15px; height:15px; border-radius:4px; background:var(--surface-2); display:block}
+.pontos i.p{background:var(--ok)} .pontos i.f{background:var(--bad)} .pontos i.j{background:var(--warn)}
 
 /* modal + toast */
 .backdrop{position:fixed; inset:0; background:rgba(10,14,9,.55); display:grid; place-items:center; padding:20px; z-index:50}
@@ -208,7 +319,7 @@ main{padding:26px 30px 60px; max-width:1180px}
       <p>Chamada do treino, mensalidades e cobrança dos responsáveis — sem caderno, sem planilha.</p>
     </div>
     <div class="auth-facts">
-      <div><b class="tnum">42</b><span>Atletas</span></div>
+      <div><b class="tnum">20</b><span>Atletas</span></div>
       <div><b class="tnum">4</b><span>Categorias</span></div>
       <div><b class="tnum">6</b><span>Treinos/semana</span></div>
     </div>
@@ -254,8 +365,9 @@ main{padding:26px 30px 60px; max-width:1180px}
     <div class="crest"><span class="ball">⚽</span> Craque do Amanhã</div>
     <nav class="nav" id="nav">
       <button data-view="painel" aria-current="page">Painel</button>
+      <button data-view="agenda">Agenda de treinos</button>
       <button data-view="alunos">Alunos</button>
-      <button data-view="presenca">Presença</button>
+      <button data-view="presenca">Chamada <span class="pill" id="nav-pill-chamada" style="background:var(--warn)">hoje</span></button>
       <button data-view="financeiro">Financeiro</button>
       <button data-view="cobrancas">Cobranças <span class="pill" id="nav-pill">6</span></button>
     </nav>
@@ -274,11 +386,19 @@ main{padding:26px 30px 60px; max-width:1180px}
         <span class="tag">Próximo treino: hoje, 18h — Sub-13</span>
       </div>
       <div class="tiles">
-        <div class="tile"><span class="eyebrow">Atletas ativos</span><b class="tnum" id="kpi-ativos">42</b><small>+3 matrículas no mês</small></div>
-        <div class="tile"><span class="eyebrow">Presença média</span><b class="tnum">87%</b><small>últimos 30 dias</small></div>
-        <div class="tile"><span class="eyebrow">Recebido em setembro</span><b class="tnum">R$ 4.320</b><small>32 de 42 mensalidades</small></div>
-        <div class="tile alert"><span class="eyebrow">Em atraso</span><b class="tnum">R$ 890</b><small>6 responsáveis</small></div>
+        <div class="tile"><span class="eyebrow">Atletas ativos</span><b class="tnum" id="kpi-ativos">–</b><small>+3 matrículas no mês</small></div>
+        <div class="tile"><span class="eyebrow">Presença média</span><b class="tnum" id="kpi-freq">–</b><small>últimos 30 dias</small></div>
+        <div class="tile"><span class="eyebrow">Recebido em setembro</span><b class="tnum" id="kpi-receb">–</b><small id="kpi-receb-sub">–</small></div>
+        <div class="tile alert"><span class="eyebrow">Em atraso</span><b class="tnum" id="kpi-atraso">–</b><small id="kpi-atraso-sub">–</small></div>
       </div>
+
+      <div class="quick">
+        <button onclick="irPara('presenca')"><span class="ic">✓</span><span><b>Fazer a chamada de hoje</b><small>Sub-13 · 18h · 5 atletas</small></span></button>
+        <button onclick="abrirNovoAluno()"><span class="ic">＋</span><span><b>Matricular atleta</b><small>ficha completa em 1 minuto</small></span></button>
+        <button onclick="irPara('cobrancas')"><span class="ic">↗</span><span><b>Cobrar atrasados</b><small>6 responsáveis · R$ 890</small></span></button>
+        <button onclick="toast('Relatório de setembro gerado')"><span class="ic">▤</span><span><b>Relatório do mês</b><small>presença + caixa em PDF</small></span></button>
+      </div>
+
       <div class="grid2">
         <div class="panel">
           <div class="panel-head"><h3>Chamada da semana</h3><span class="tag">4 turmas</span></div>
@@ -288,13 +408,44 @@ main{padding:26px 30px 60px; max-width:1180px}
           </table></div>
         </div>
         <div class="panel">
-          <div class="panel-head"><h3>Aniversariantes</h3></div>
+          <div class="panel-head"><h3>Precisa da sua atenção</h3><span class="tag bad" id="cont-alertas">4</span></div>
+          <div class="alertas" id="alertas"></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:16px">
+        <div class="panel">
+          <div class="panel-head"><h3>Frequência por turma</h3><span class="tag">últimos 30 dias</span></div>
+          <div class="panel-body" id="freq-turmas" style="display:flex; flex-direction:column; gap:15px"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Aniversariantes do mês</h3><span class="tag">setembro</span></div>
           <div class="panel-body" style="display:flex; flex-direction:column; gap:14px">
             <div class="who"><span class="jersey">10</span><div><b>Arthur Nogueira</b><small>Sub-11 · 12 anos em 14/09</small></div></div>
             <div class="who"><span class="jersey">7</span><div><b>Lívia Prado</b><small>Sub-13 · 13 anos em 21/09</small></div></div>
             <div class="who"><span class="jersey">4</span><div><b>Enzo Batista</b><small>Sub-9 · 10 anos em 29/09</small></div></div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="view" id="v-agenda" hidden>
+      <div class="page-head">
+        <div><h2>Agenda de treinos</h2><p>Semana de 31/08 a 05/09 · 8 treinos e 1 amistoso</p></div>
+        <div class="head-actions">
+          <button class="btn btn-ghost" onclick="toast('Semana anterior')">← Semana</button>
+          <button class="btn btn-ghost" onclick="toast('Próxima semana')">Semana →</button>
+          <button class="btn" onclick="toast('Novo treino adicionado à agenda')">+ Agendar treino</button>
+        </div>
+      </div>
+      <div class="agenda" id="agenda"></div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-head"><h3>Turmas</h3><span class="tag">4 categorias</span></div>
+        <div class="scroll"><table class="table">
+          <thead><tr><th>Categoria</th><th>Dias de treino</th><th>Professor</th><th class="r">Atletas</th><th class="r">Mensalidade</th><th class="r">Vagas</th></tr></thead>
+          <tbody id="tb-turmas"></tbody>
+        </table></div>
       </div>
     </section>
 
@@ -305,32 +456,71 @@ main{padding:26px 30px 60px; max-width:1180px}
         <button class="btn" onclick="abrirNovoAluno()">+ Novo aluno</button>
       </div>
       <div class="panel">
-        <div class="panel-head">
+        <div class="panel-head" style="flex-wrap:wrap; gap:10px">
+          <div class="busca"><input id="busca-aluno" placeholder="Buscar atleta ou responsável..." autocomplete="off"></div>
           <div class="chips" id="chips-cat"></div>
           <span class="tag" id="cont-alunos"></span>
         </div>
         <div class="scroll"><table class="table">
-          <thead><tr><th>Atleta</th><th>Categoria</th><th>Posição</th><th>Responsável</th><th>Contato</th><th class="r">Mensalidade</th></tr></thead>
+          <thead><tr><th>Atleta</th><th>Categoria</th><th>Posição</th><th>Responsável</th><th>Contato</th><th class="r">Frequência</th><th class="r">Mensalidade</th></tr></thead>
           <tbody id="tb-alunos"></tbody>
         </table></div>
       </div>
+      <p style="color:var(--ink-3); font-size:12px; margin:10px 2px 0">Clique em um atleta para abrir a ficha completa.</p>
     </section>
 
     <!-- PRESENÇA -->
     <section class="view" id="v-presenca" hidden>
       <div class="page-head">
-        <div><h2>Presença</h2><p>Treino de quarta-feira, 02/09/2026 · 18h00 · Campo do Bosque</p></div>
-        <button class="btn" onclick="toast('Chamada salva')">Salvar chamada</button>
-      </div>
-      <div class="panel">
-        <div class="panel-head">
-          <div class="chips" id="chips-turma"></div>
-          <div class="tally" id="tally"></div>
+        <div><h2>Chamada do treino</h2><p>Escolha a turma, marque cada atleta e salve. A frequência do aluno e o relatório do mês se atualizam sozinhos.</p></div>
+        <div class="head-actions">
+          <button class="btn btn-ghost" onclick="toast('Mostrando as chamadas já salvas desta turma')">Chamadas anteriores</button>
+          <button class="btn" id="btn-salvar">Salvar chamada</button>
         </div>
-        <div class="scroll"><table class="table">
-          <thead><tr><th>Atleta</th><th>Frequência no mês</th><th class="r">Marcação</th></tr></thead>
-          <tbody id="tb-presenca"></tbody>
-        </table></div>
+      </div>
+
+      <!-- 1. qual treino -->
+      <div class="sessao">
+        <div class="campo" style="flex:1; min-width:230px">
+          <span class="eyebrow">1. Turma</span>
+          <div class="chips" id="chips-turma"></div>
+        </div>
+        <div class="sep"></div>
+        <div class="campo">
+          <span class="eyebrow">2. Data do treino</span>
+          <input type="date" id="dt-treino" value="2026-09-02" onchange="toast('Chamada do dia ' + this.value.split('-').reverse().join('/'))">
+        </div>
+        <div class="campo">
+          <span class="eyebrow">Horário</span>
+          <select id="hr-treino"><option>17h00</option><option selected>18h00</option><option>19h00</option></select>
+        </div>
+        <div class="campo">
+          <span class="eyebrow">Local</span>
+          <select id="lc-treino"><option>Campo do Bosque</option><option>Society Vila Nova</option><option>Ginásio coberto</option></select>
+        </div>
+      </div>
+
+      <!-- 2. marcar -->
+      <div class="panel">
+        <div class="chamada-top">
+          <div class="prog">
+            <div class="prog-lbl"><b id="prog-txt">0 de 0 atletas marcados</b><span id="prog-falta">—</span></div>
+            <div class="prog-bar" id="prog-bar"></div>
+          </div>
+          <div class="chamada-acoes">
+            <button class="btn btn-ghost" id="btn-todos">✓ Marcar todos presentes</button>
+            <button class="btn btn-ghost" id="btn-limpar">Limpar</button>
+          </div>
+        </div>
+
+        <div class="placar" id="placar"></div>
+        <div class="lista-chamada" id="lista-chamada"></div>
+      </div>
+
+      <!-- 3. histórico -->
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-head"><h3>Últimas chamadas desta turma</h3><span class="tag" id="hist-turma">Sub-13</span></div>
+        <div class="hist" id="hist"></div>
       </div>
     </section>
 
@@ -341,10 +531,10 @@ main{padding:26px 30px 60px; max-width:1180px}
         <button class="btn btn-ghost" onclick="toast('Relatório exportado')">Exportar relatório</button>
       </div>
       <div class="tiles">
-        <div class="tile"><span class="eyebrow">Entradas no mês</span><b class="tnum" style="color:var(--ok)">R$ 4.320</b><small>mensalidades + uniformes</small></div>
-        <div class="tile"><span class="eyebrow">Saídas no mês</span><b class="tnum">R$ 2.510</b><small>campo, material, arbitragem</small></div>
-        <div class="tile"><span class="eyebrow">Saldo</span><b class="tnum">R$ 1.810</b><small>+18% sobre agosto</small></div>
-        <div class="tile alert"><span class="eyebrow">A receber</span><b class="tnum">R$ 890</b><small>6 mensalidades vencidas</small></div>
+        <div class="tile"><span class="eyebrow">Entradas no mês</span><b class="tnum" id="fin-in" style="color:var(--ok)">–</b><small>mensalidades + uniformes</small></div>
+        <div class="tile"><span class="eyebrow">Saídas no mês</span><b class="tnum">R$ 1.450</b><small>campo, material, arbitragem</small></div>
+        <div class="tile"><span class="eyebrow">Saldo</span><b class="tnum" id="fin-saldo">–</b><small>+18% sobre agosto</small></div>
+        <div class="tile alert"><span class="eyebrow">A receber</span><b class="tnum" id="fin-receber">–</b><small id="fin-receber-sub">–</small></div>
       </div>
       <div class="grid2">
         <div class="panel">
@@ -359,13 +549,20 @@ main{padding:26px 30px 60px; max-width:1180px}
           <div class="scroll"><table class="table"><tbody id="tb-lanc"></tbody></table></div>
         </div>
       </div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-head"><h3>Mensalidades por categoria</h3><span class="tag">setembro de 2026</span></div>
+        <div class="scroll"><table class="table">
+          <thead><tr><th>Categoria</th><th>Valor</th><th class="r">Atletas</th><th class="r">Pagas</th><th class="r">Em aberto</th><th class="r">Previsto</th><th class="r">Recebido</th></tr></thead>
+          <tbody id="tb-catfin"></tbody>
+        </table></div>
+      </div>
     </section>
 
     <!-- COBRANÇAS -->
     <section class="view" id="v-cobrancas" hidden>
       <div class="page-head">
-        <div><h2>Cobranças</h2><p>6 responsáveis com mensalidade vencida — total de R$ 890,00</p></div>
-        <button class="btn" onclick="toast('Lembrete enviado para os 6 responsáveis')">Cobrar todos</button>
+        <div><h2>Cobranças</h2><p id="sub-cobrancas">–</p></div>
+        <button class="btn" onclick="toast('Lembrete enviado para todos os responsáveis em atraso')">Cobrar todos</button>
       </div>
       <div class="panel">
         <div class="panel-head"><h3>Em aberto</h3><span class="tag bad">Vencidas</span></div>
@@ -382,22 +579,29 @@ main{padding:26px 30px 60px; max-width:1180px}
 /* ---------------- dados de demonstração ---------------- */
 var MENS = {"Sub-9":120, "Sub-11":130, "Sub-13":140, "Sub-15":150};
 var alunos = [
-  {n:"Arthur Nogueira",  num:10, cat:"Sub-11", pos:"Meia",     resp:"Marcela Nogueira", tel:"(62) 99184-2210", st:"atraso", dias:12, freq:"11/12"},
-  {n:"Bernardo Lima",    num:9,  cat:"Sub-11", pos:"Atacante", resp:"Cláudio Lima",     tel:"(62) 99623-8814", st:"pago",   dias:0,  freq:"12/12"},
-  {n:"Lívia Prado",      num:7,  cat:"Sub-13", pos:"Ponta",    resp:"Renata Prado",     tel:"(62) 98110-4477", st:"pago",   dias:0,  freq:"10/12"},
-  {n:"Enzo Batista",     num:4,  cat:"Sub-9",  pos:"Zagueiro", resp:"Patrícia Batista", tel:"(62) 99442-0193", st:"atraso", dias:7,  freq:"9/12"},
-  {n:"Miguel Tavares",   num:1,  cat:"Sub-15", pos:"Goleiro",  resp:"Sandro Tavares",   tel:"(62) 99871-3025", st:"vence",  dias:0,  freq:"12/12"},
-  {n:"Heitor Camargo",   num:8,  cat:"Sub-13", pos:"Volante",  resp:"Aline Camargo",    tel:"(62) 98274-6612", st:"atraso", dias:21, freq:"7/12"},
-  {n:"Manuela Reis",     num:11, cat:"Sub-11", pos:"Ponta",    resp:"Douglas Reis",     tel:"(62) 99065-7788", st:"pago",   dias:0,  freq:"12/12"},
-  {n:"Davi Fontes",      num:5,  cat:"Sub-15", pos:"Zagueiro", resp:"Juliana Fontes",   tel:"(62) 99310-5521", st:"atraso", dias:4,  freq:"11/12"},
-  {n:"Théo Andrade",     num:6,  cat:"Sub-9",  pos:"Meia",     resp:"Fabiano Andrade",  tel:"(62) 98899-1204", st:"pago",   dias:0,  freq:"8/12"},
-  {n:"Isabela Moura",    num:2,  cat:"Sub-13", pos:"Lateral",  resp:"Simone Moura",     tel:"(62) 99727-3390", st:"vence",  dias:0,  freq:"12/12"},
-  {n:"Lucas Pereira",    num:3,  cat:"Sub-15", pos:"Lateral",  resp:"Rogério Pereira",  tel:"(62) 99558-1147", st:"atraso", dias:33, freq:"5/12"},
-  {n:"Pedro Vasques",    num:14, cat:"Sub-9",  pos:"Atacante", resp:"Camila Vasques",   tel:"(62) 98003-2266", st:"pago",   dias:0,  freq:"12/12"},
-  {n:"Rafael Duarte",    num:16, cat:"Sub-13", pos:"Goleiro",  resp:"Vanessa Duarte",   tel:"(62) 99441-9083", st:"atraso", dias:9,  freq:"10/12"},
-  {n:"Yuri Nascimento",  num:12, cat:"Sub-15", pos:"Meia",     resp:"Marcos Nascimento",tel:"(62) 99612-4470", st:"pago",   dias:0,  freq:"11/12"}
+  {n:"Arthur Nogueira",  num:10, cat:"Sub-11", pos:"Meia",     resp:"Marcela Nogueira", par:"Mãe", tel:"(62) 99184-2210", st:"atraso", dias:12, freq:"11/12", nasc:"14/09/2014", h:"PPPFPPPP", obs:"Bombinha para asma na mochila."},
+  {n:"Bernardo Lima",    num:9,  cat:"Sub-11", pos:"Atacante", resp:"Cláudio Lima",     par:"Pai", tel:"(62) 99623-8814", st:"pago",   dias:0,  freq:"12/12", nasc:"03/02/2015", h:"PPPPPPPP", obs:"—"},
+  {n:"Nicolas Ferraz",   num:13, cat:"Sub-11", pos:"Volante",  resp:"Tatiana Ferraz",   par:"Mãe", tel:"(62) 99230-6654", st:"pago",   dias:0,  freq:"10/12", nasc:"22/07/2014", h:"PPJPPFPP", obs:"—"},
+  {n:"Laura Mendes",     num:20, cat:"Sub-11", pos:"Lateral",  resp:"Kelly Mendes",     par:"Mãe", tel:"(62) 98456-7712", st:"vence",  dias:0,  freq:"12/12", nasc:"11/11/2014", h:"PPPPPPPP", obs:"—"},
+  {n:"Manuela Reis",     num:11, cat:"Sub-11", pos:"Ponta",    resp:"Douglas Reis",     par:"Pai", tel:"(62) 99065-7788", st:"pago",   dias:0,  freq:"12/12", nasc:"05/05/2015", h:"PPPPPPPP", obs:"—"},
+  {n:"Lívia Prado",      num:7,  cat:"Sub-13", pos:"Ponta",    resp:"Renata Prado",     par:"Mãe", tel:"(62) 98110-4477", st:"pago",   dias:0,  freq:"10/12", nasc:"21/09/2013", h:"PPFPPPJP", obs:"—"},
+  {n:"Heitor Camargo",   num:8,  cat:"Sub-13", pos:"Volante",  resp:"Aline Camargo",    par:"Mãe", tel:"(62) 98274-6612", st:"atraso", dias:21, freq:"7/12",  nasc:"30/01/2013", h:"FFPPFPPF", obs:"Sai mais cedo às quartas."},
+  {n:"Isabela Moura",    num:2,  cat:"Sub-13", pos:"Lateral",  resp:"Simone Moura",     par:"Mãe", tel:"(62) 99727-3390", st:"vence",  dias:0,  freq:"12/12", nasc:"17/06/2013", h:"PPPPPPPP", obs:"—"},
+  {n:"Rafael Duarte",    num:16, cat:"Sub-13", pos:"Goleiro",  resp:"Vanessa Duarte",   par:"Mãe", tel:"(62) 99441-9083", st:"atraso", dias:9,  freq:"10/12", nasc:"08/12/2012", h:"PPPJPPPF", obs:"Usa luva própria."},
+  {n:"Gustavo Rocha",    num:15, cat:"Sub-13", pos:"Zagueiro", resp:"Eliane Rocha",     par:"Avó / Avô", tel:"(62) 98891-3374", st:"pago", dias:0, freq:"11/12", nasc:"25/04/2013", h:"PPPPFPPP", obs:"—"},
+  {n:"Enzo Batista",     num:4,  cat:"Sub-9",  pos:"Zagueiro", resp:"Patrícia Batista", par:"Mãe", tel:"(62) 99442-0193", st:"atraso", dias:7,  freq:"9/12",  nasc:"29/09/2016", h:"PFPPJPPP", obs:"Alergia a amendoim."},
+  {n:"Théo Andrade",     num:6,  cat:"Sub-9",  pos:"Meia",     resp:"Fabiano Andrade",  par:"Pai", tel:"(62) 98899-1204", st:"pago",   dias:0,  freq:"8/12",  nasc:"02/03/2017", h:"PFFPPJPP", obs:"—"},
+  {n:"Pedro Vasques",    num:14, cat:"Sub-9",  pos:"Atacante", resp:"Camila Vasques",   par:"Mãe", tel:"(62) 98003-2266", st:"pago",   dias:0,  freq:"12/12", nasc:"19/08/2016", h:"PPPPPPPP", obs:"—"},
+  {n:"Alice Barreto",    num:17, cat:"Sub-9",  pos:"Ponta",    resp:"Marcos Barreto",   par:"Pai", tel:"(62) 99118-5540", st:"pago",   dias:0,  freq:"11/12", nasc:"07/01/2017", h:"PPPPPFPP", obs:"—"},
+  {n:"Samuel Queiroz",   num:18, cat:"Sub-9",  pos:"Goleiro",  resp:"Débora Queiroz",   par:"Mãe", tel:"(62) 98720-9931", st:"vence",  dias:0,  freq:"10/12", nasc:"13/10/2016", h:"PPJPPPFP", obs:"—"},
+  {n:"Miguel Tavares",   num:1,  cat:"Sub-15", pos:"Goleiro",  resp:"Sandro Tavares",   par:"Pai", tel:"(62) 99871-3025", st:"vence",  dias:0,  freq:"12/12", nasc:"26/02/2011", h:"PPPPPPPP", obs:"—"},
+  {n:"Davi Fontes",      num:5,  cat:"Sub-15", pos:"Zagueiro", resp:"Juliana Fontes",   par:"Mãe", tel:"(62) 99310-5521", st:"atraso", dias:4,  freq:"11/12", nasc:"09/07/2011", h:"PPPPPPJP", obs:"—"},
+  {n:"Lucas Pereira",    num:3,  cat:"Sub-15", pos:"Lateral",  resp:"Rogério Pereira",  par:"Pai", tel:"(62) 99558-1147", st:"atraso", dias:33, freq:"5/12",  nasc:"31/03/2011", h:"FFPFFPFP", obs:"Conversar com o pai sobre as faltas."},
+  {n:"Yuri Nascimento",  num:12, cat:"Sub-15", pos:"Meia",     resp:"Marcos Nascimento",par:"Pai", tel:"(62) 99612-4470", st:"pago",   dias:0,  freq:"11/12", nasc:"15/05/2011", h:"PPPPFPPP", obs:"—"},
+  {n:"Vitor Hugo Salles",num:19, cat:"Sub-15", pos:"Atacante", resp:"Paulo Salles",     par:"Pai", tel:"(62) 98330-2218", st:"pago",   dias:0,  freq:"12/12", nasc:"04/12/2010", h:"PPPPPPPP", obs:"—"}
 ];
 var TAGS = {pago:['ok','Em dia'], vence:['warn','Vence em 05/10'], atraso:['bad','Atrasada']};
+function pct(a){ var p = a.freq.split('/'); return Math.round(p[0]/p[1]*100); }
 
 /* ---------------- login ---------------- */
 var modoCadastro = false;
@@ -427,19 +631,23 @@ function sair(){
 }
 
 /* ---------------- navegação ---------------- */
+function irPara(view){
+  Array.prototype.forEach.call(document.querySelectorAll('#nav button'), function(x){
+    if(x.dataset.view === view) x.setAttribute('aria-current','page'); else x.removeAttribute('aria-current');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.view'), function(v){ v.hidden = true; });
+  document.getElementById('v-'+view).hidden = false;
+  window.scrollTo(0,0);
+}
 document.getElementById('nav').addEventListener('click', function(e){
   var b = e.target.closest('button[data-view]'); if(!b) return;
-  Array.prototype.forEach.call(this.querySelectorAll('button'), function(x){ x.removeAttribute('aria-current'); });
-  b.setAttribute('aria-current','page');
-  Array.prototype.forEach.call(document.querySelectorAll('.view'), function(v){ v.hidden = true; });
-  document.getElementById('v-'+b.dataset.view).hidden = false;
-  window.scrollTo(0,0);
+  irPara(b.dataset.view);
 });
 
 /* ---------------- painel ---------------- */
 var semana = [
-  ['Sub-9','Segunda 17h',14,2],['Sub-11','Terça 18h',16,1],
-  ['Sub-13','Quarta 18h',9,3],['Sub-15','Quinta 19h',11,2]
+  ['Sub-9','Segunda 17h',4,1],['Sub-11','Terça 18h',5,0],
+  ['Sub-13','Quarta 18h',3,2],['Sub-15','Quinta 19h',4,1]
 ];
 document.getElementById('tb-semana').innerHTML = semana.map(function(r){
   var idx = Math.round(r[2]/(r[2]+r[3])*100);
@@ -448,6 +656,69 @@ document.getElementById('tb-semana').innerHTML = semana.map(function(r){
     '<td class="r">'+r[2]+'</td><td class="r">'+r[3]+'</td>'+
     '<td class="r"><span class="tag '+cls+'">'+idx+'%</span></td></tr>';
 }).join('');
+
+/* alertas do painel */
+var alertas = [
+  ['bad',  '6 mensalidades vencidas',        'R$ 830,00 parados — a mais antiga tem 33 dias.', 'Cobrar', 'cobrancas'],
+  ['warn', '3 atletas com frequência baixa', 'Lucas, Heitor e Théo abaixo de 70% no mês.',     'Ver alunos', 'alunos'],
+  ['warn', 'Chamada de terça não foi salva', 'Sub-11, treino de 01/09 às 18h.',                'Fazer agora', 'presenca'],
+  ['ok',   '2 fichas sem autorização de imagem', 'Pendente para Alice Barreto e Samuel Queiroz.', 'Ver alunos', 'alunos']
+];
+document.getElementById('cont-alertas').textContent = alertas.length;
+document.getElementById('alertas').innerHTML = alertas.map(function(a){
+  return '<div class="alerta"><span class="dot" style="background:var(--'+a[0]+')"></span>'+
+    '<div><b>'+a[1]+'</b><small>'+a[2]+'</small></div>'+
+    '<button onclick="irPara(\''+a[4]+'\')">'+a[3]+' →</button></div>';
+}).join('');
+
+/* frequência por turma */
+function renderFreqTurmas(){
+  document.getElementById('freq-turmas').innerHTML = ['Sub-9','Sub-11','Sub-13','Sub-15'].map(function(c){
+    var t = alunos.filter(function(a){ return a.cat===c; });
+    if(!t.length) return '';
+    var m = Math.round(t.reduce(function(s,a){ return s + pct(a); },0) / t.length);
+    var cor = m >= 85 ? 'var(--ok)' : (m >= 75 ? 'var(--warn)' : 'var(--bad)');
+    return '<div><div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px">'+
+      '<b style="font-size:13px">'+c+'</b>'+
+      '<span style="font-size:12px; color:var(--ink-3)" class="tnum">'+t.length+' atletas · <b style="color:'+cor+'">'+m+'%</b></span></div>'+
+      '<div class="prog-bar"><i style="width:'+m+'%; background:'+cor+'"></i></div></div>';
+  }).join('');
+}
+renderFreqTurmas();
+
+/* ---------------- agenda ---------------- */
+var AGENDA = [
+  ['Segunda','31/08',[['Sub-9','17h00 · Campo do Bosque · Prof. Ricardo',''],['Sub-11','18h00 · Campo do Bosque · Prof. Ricardo','']]],
+  ['Terça','01/09',[['Sub-11','18h00 · Campo do Bosque · Prof. Ricardo',''],['Sub-13','18h00 · Campo do Bosque · Prof. Ricardo','']]],
+  ['Quarta','02/09',[['Sub-13','18h00 · Campo do Bosque · Prof. Ricardo',''],['Sub-15','19h00 · Society Vila Nova · Prof. Ana','']]],
+  ['Quinta','03/09',[['Sub-15','19h00 · Society Vila Nova · Prof. Ana','']]],
+  ['Sexta','04/09',[['Sub-9','17h00 · Campo do Bosque · Prof. Ana','']]],
+  ['Sábado','05/09',[['Amistoso Sub-13','09h00 · vs. Escolinha Bandeirante','jogo']]]
+];
+document.getElementById('agenda').innerHTML = AGENDA.map(function(d,i){
+  var itens = d[2].length
+    ? d[2].map(function(t){ return '<div class="treino '+t[2]+'"><b>'+t[0]+'</b><small>'+t[1]+'</small></div>'; }).join('')
+    : '<p class="vazio">Sem treino</p>';
+  return '<div class="dia'+(i===2?' hoje':'')+'"><span class="eyebrow">'+d[0]+' · '+d[1]+(i===2?' · hoje':'')+'</span>'+itens+'</div>';
+}).join('');
+
+var TURMAS = [
+  ['Sub-9','Segunda e sexta, 17h','Prof. Ricardo / Ana',8],
+  ['Sub-11','Segunda e terça, 18h','Prof. Ricardo',8],
+  ['Sub-13','Terça e quarta, 18h','Prof. Ricardo',8],
+  ['Sub-15','Quarta e quinta, 19h','Prof. Ana',8]
+];
+function renderTurmas(){
+  document.getElementById('tb-turmas').innerHTML = TURMAS.map(function(t){
+    var qtd = alunos.filter(function(a){ return a.cat===t[0]; }).length;
+    var vagas = t[3] - qtd;
+    return '<tr><td><b>'+t[0]+'</b></td><td style="color:var(--ink-2)">'+t[1]+'</td>'+
+      '<td style="color:var(--ink-2)">'+t[2]+'</td><td class="r tnum">'+qtd+'</td>'+
+      '<td class="r tnum">R$ '+MENS[t[0]]+',00</td>'+
+      '<td class="r"><span class="tag '+(vagas<=2?'warn':'ok')+'">'+vagas+' vagas</span></td></tr>';
+  }).join('');
+}
+renderTurmas();
 
 /* ---------------- alunos ---------------- */
 var catAtual = 'Todas';
@@ -461,25 +732,104 @@ document.getElementById('chips-cat').addEventListener('click', function(e){
   Array.prototype.forEach.call(this.querySelectorAll('.chip'), function(x){ x.setAttribute('aria-pressed', String(x.dataset.c===catAtual)); });
   renderAlunos();
 });
+var termo = '';
+document.getElementById('busca-aluno').addEventListener('input', function(){
+  termo = this.value.trim().toLowerCase();
+  renderAlunos();
+});
 function renderAlunos(){
-  var lista = alunos.filter(function(a){ return catAtual==='Todas' || a.cat===catAtual; });
+  var lista = alunos.filter(function(a){
+    var okCat = catAtual==='Todas' || a.cat===catAtual;
+    var okTermo = !termo || a.n.toLowerCase().indexOf(termo) > -1 || a.resp.toLowerCase().indexOf(termo) > -1;
+    return okCat && okTermo;
+  });
   document.getElementById('cont-alunos').textContent = lista.length + ' atletas';
+  if(!lista.length){
+    document.getElementById('tb-alunos').innerHTML = '<tr><td colspan="7"><p class="vazio-msg">Nenhum atleta encontrado para esta busca.</p></td></tr>';
+    return;
+  }
   document.getElementById('tb-alunos').innerHTML = lista.map(function(a){
-    var t = TAGS[a.st];
-    return '<tr><td><div class="who"><span class="jersey">'+a.num+'</span><div><b>'+a.n+'</b>'+
-      '<small>'+a.freq+' treinos no mês</small></div></div></td>'+
+    var t = TAGS[a.st], f = pct(a);
+    var cor = f >= 85 ? 'var(--ok)' : (f >= 70 ? 'var(--warn)' : 'var(--bad)');
+    return '<tr class="clicavel" data-aluno="'+a.n+'"><td><div class="who"><span class="jersey">'+a.num+'</span><div><b>'+a.n+'</b>'+
+      '<small>'+a.nasc+'</small></div></div></td>'+
       '<td><span class="tag">'+a.cat+'</span></td><td style="color:var(--ink-2)">'+a.pos+'</td>'+
-      '<td>'+a.resp+'</td><td class="tnum" style="color:var(--ink-3)">'+a.tel+'</td>'+
+      '<td>'+a.resp+'<br><small style="color:var(--ink-3)">'+a.par+'</small></td>'+
+      '<td class="tnum" style="color:var(--ink-3)">'+a.tel+'</td>'+
+      '<td class="r"><b class="tnum" style="color:'+cor+'">'+f+'%</b><br><small style="color:var(--ink-3)">'+a.freq+' treinos</small></td>'+
       '<td class="r"><b class="tnum">R$ '+MENS[a.cat]+',00</b><br><span class="tag '+t[0]+'">'+t[1]+'</span></td></tr>';
   }).join('');
 }
 renderAlunos();
 
-/* ---------------- presença ---------------- */
+document.getElementById('tb-alunos').addEventListener('click', function(e){
+  var tr = e.target.closest('tr[data-aluno]'); if(!tr) return;
+  abrirFicha(tr.dataset.aluno);
+});
+
+function abrirFicha(nome){
+  var a = alunos.filter(function(x){ return x.n === nome; })[0]; if(!a) return;
+  var t = TAGS[a.st], f = pct(a);
+  var cor = f >= 85 ? 'var(--ok)' : (f >= 70 ? 'var(--warn)' : 'var(--bad)');
+  var pontos = a.h.split('').map(function(m){
+    return '<i class="'+m.toLowerCase()+'" title="'+({P:'Presente',F:'Falta',J:'Justificada'}[m])+'"></i>';
+  }).join('');
+
+  var el = document.createElement('div');
+  el.className = 'backdrop';
+  el.innerHTML = '<div class="modal lg" role="dialog" aria-modal="true" aria-label="Ficha do atleta">'+
+    '<div class="ficha-top"><span class="jersey">'+a.num+'</span>'+
+      '<div style="flex:1"><h3>'+a.n+'</h3><small>'+a.cat+' · '+a.pos+' · camisa '+a.num+'</small></div>'+
+      '<span class="tag '+t[0]+'">'+t[1]+'</span></div>'+
+    '<div class="ficha-kpis">'+
+      '<div><span>Frequência</span><b style="color:'+cor+'">'+f+'%</b></div>'+
+      '<div><span>Treinos no mês</span><b>'+a.freq+'</b></div>'+
+      '<div><span>Mensalidade</span><b>R$ '+MENS[a.cat]+'</b></div>'+
+    '</div>'+
+    '<div class="modal-body scrolly">'+
+      '<div class="form-sec" style="margin-bottom:12px"><span class="eyebrow">Últimos 8 treinos</span><hr></div>'+
+      '<div class="pontos">'+pontos+'</div>'+
+      '<p style="color:var(--ink-3); font-size:11.5px; margin:8px 0 20px">Verde presente · vermelho falta · amarelo justificada</p>'+
+      '<div class="form-sec" style="margin-bottom:12px"><span class="eyebrow">Dados</span><hr></div>'+
+      '<dl class="dl">'+
+        '<dt>Nascimento</dt><dd>'+a.nasc+'</dd>'+
+        '<dt>Responsável</dt><dd>'+a.resp+' <span style="color:var(--ink-3)">('+a.par+')</span></dd>'+
+        '<dt>WhatsApp</dt><dd class="tnum">'+a.tel+'</dd>'+
+        '<dt>Vencimento</dt><dd>Todo dia 05'+(a.dias ? ' <span class="tag bad">'+a.dias+' dias de atraso</span>' : '')+'</dd>'+
+        '<dt>Observações</dt><dd>'+a.obs+'</dd>'+
+      '</dl>'+
+    '</div>'+
+    '<div class="modal-foot">'+
+      '<button class="btn btn-ghost" data-x>Fechar</button>'+
+      '<button class="btn btn-ghost" data-wpp>Chamar no WhatsApp</button>'+
+      (a.st==='atraso' ? '<button class="btn" data-cob>Enviar cobrança</button>' : '<button class="btn" data-edit>Editar ficha</button>')+
+    '</div></div>';
+  el.addEventListener('click', function(e){
+    if(e.target === el || e.target.hasAttribute('data-x')) el.remove();
+    if(e.target.hasAttribute('data-wpp')){ el.remove(); toast('Abrindo conversa com '+a.resp.split(' ')[0]); }
+    if(e.target.hasAttribute('data-edit')){ el.remove(); toast('Ficha de '+a.n.split(' ')[0]+' aberta para edição'); }
+    if(e.target.hasAttribute('data-cob')){ el.remove(); irPara('cobrancas'); toast('Cobrança de '+a.n.split(' ')[0]+' na fila'); }
+  });
+  document.body.appendChild(el);
+}
+
+/* ---------------- chamada ---------------- */
 var turmaAtual = 'Sub-13';
-var marcas = {};
-alunos.forEach(function(a){ marcas[a.n] = 'P'; });
-marcas['Heitor Camargo'] = 'F'; marcas['Lucas Pereira'] = 'J';
+var marcas = {};            /* '' = ainda não marcado */
+var justificativas = {};
+alunos.forEach(function(a){ marcas[a.n] = ''; });
+
+var ROTULO = {P:'Presente', F:'Falta', J:'Justificada'};
+var ICONE  = {P:'✓', F:'✕', J:'!'};
+var MOTIVOS = ['Motivo da falta…','Atestado médico','Prova na escola','Viagem em família','Compromisso familiar','Machucado'];
+
+var HISTORICO = {
+  'Sub-9':  [['29/08',4,5],['26/08',5,5],['22/08',4,5],['19/08',3,5],['15/08',5,5]],
+  'Sub-11': [['29/08',5,5],['26/08',4,5],['22/08',5,5],['19/08',4,5],['15/08',5,5]],
+  'Sub-13': [['28/08',4,5],['26/08',3,5],['21/08',5,5],['19/08',4,5],['14/08',4,5]],
+  'Sub-15': [['28/08',4,5],['27/08',5,5],['21/08',3,5],['20/08',5,5],['14/08',4,5]]
+};
+
 document.getElementById('chips-turma').innerHTML = ['Sub-9','Sub-11','Sub-13','Sub-15'].map(function(c){
   return '<button class="chip" aria-pressed="'+(c===turmaAtual)+'" data-t="'+c+'">'+c+'</button>';
 }).join('');
@@ -487,41 +837,105 @@ document.getElementById('chips-turma').addEventListener('click', function(e){
   var b = e.target.closest('.chip'); if(!b) return;
   turmaAtual = b.dataset.t;
   Array.prototype.forEach.call(this.querySelectorAll('.chip'), function(x){ x.setAttribute('aria-pressed', String(x.dataset.t===turmaAtual)); });
-  renderPresenca();
+  renderChamada();
 });
-function renderPresenca(){
-  var lista = alunos.filter(function(a){ return a.cat===turmaAtual; });
-  document.getElementById('tb-presenca').innerHTML = lista.map(function(a){
-    var m = marcas[a.n];
-    return '<tr><td><div class="who"><span class="jersey">'+a.num+'</span><div><b>'+a.n+'</b><small>'+a.pos+'</small></div></div></td>'+
-      '<td style="color:var(--ink-2)" class="tnum">'+a.freq+' treinos</td>'+
-      '<td class="r"><div class="seg" data-aluno="'+a.n+'">'+
-        ['P','F','J'].map(function(v){
-          var rot = {P:'Presente',F:'Falta',J:'Justificada'}[v];
-          return '<button data-v="'+v+'" aria-pressed="'+(m===v)+'">'+rot+'</button>';
-        }).join('')+
-      '</div></td></tr>';
+
+function turmaLista(){ return alunos.filter(function(a){ return a.cat===turmaAtual; }); }
+
+function renderChamada(){
+  var lista = turmaLista();
+
+  /* cartões */
+  document.getElementById('lista-chamada').innerHTML = lista.map(function(a){
+    var m = marcas[a.n] || '';
+    var f = pct(a);
+    var botoes = ['P','F','J'].map(function(v){
+      return '<button data-v="'+v+'" aria-pressed="'+(m===v)+'"><i>'+ICONE[v]+'</i>'+ROTULO[v]+'</button>';
+    }).join('');
+    var extra = m === 'J'
+      ? '<select class="just" data-just="'+a.n+'">'+MOTIVOS.map(function(o){
+          return '<option'+(justificativas[a.n]===o?' selected':'')+'>'+o+'</option>';
+        }).join('')+'</select>'
+      : (m === '' ? '<span class="tag">a marcar</span>' : '');
+    return '<div class="ath" data-st="'+m+'" data-aluno="'+a.n+'">'+
+      '<span class="jersey">'+a.num+'</span>'+
+      '<div class="ath-info"><b>'+a.n+'</b><small>'+a.pos+'</small>'+
+        '<div class="ath-freq"><div class="fbar"><i class="'+(f<70?'low':'')+'" style="width:'+f+'%"></i></div>'+
+        '<em>'+f+'% no mês</em></div></div>'+
+      '<div class="ath-lado">'+extra+'<div class="seg">'+botoes+'</div></div>'+
+    '</div>';
   }).join('');
-  var p=0,f=0,j=0;
-  lista.forEach(function(a){ var m=marcas[a.n]; if(m==='P')p++; else if(m==='F')f++; else j++; });
-  document.getElementById('tally').innerHTML =
-    '<span><b style="color:var(--ok)">'+p+'</b>presentes</span>'+
-    '<span><b style="color:var(--bad)">'+f+'</b>faltas</span>'+
-    '<span><b style="color:var(--warn)">'+j+'</b>justificadas</span>';
+
+  /* contagem */
+  var p=0,f=0,j=0,n=0;
+  lista.forEach(function(a){
+    var m = marcas[a.n];
+    if(m==='P') p++; else if(m==='F') f++; else if(m==='J') j++; else n++;
+  });
+  var tot = lista.length || 1, marcados = p+f+j;
+
+  document.getElementById('prog-txt').textContent = marcados + ' de ' + lista.length + ' atletas marcados';
+  document.getElementById('prog-falta').textContent = n === 0
+    ? 'tudo pronto — é só salvar'
+    : 'faltam ' + n + (n === 1 ? ' atleta' : ' atletas');
+  document.getElementById('prog-bar').innerHTML =
+    '<i class="p" style="width:'+(p/tot*100)+'%"></i>'+
+    '<i class="f" style="width:'+(f/tot*100)+'%"></i>'+
+    '<i class="j" style="width:'+(j/tot*100)+'%"></i>';
+
+  var indice = marcados ? Math.round((p+j)/marcados*100) : 0;
+  document.getElementById('placar').innerHTML =
+    '<div><span>Presentes</span><b style="color:var(--ok)">'+p+'</b></div>'+
+    '<div><span>Faltas</span><b style="color:var(--bad)">'+f+'</b></div>'+
+    '<div><span>Justificadas</span><b style="color:var(--warn)">'+j+'</b></div>'+
+    '<div><span>Índice do treino</span><b>'+(marcados ? indice+'%' : '—')+'</b></div>';
+
+  /* histórico */
+  document.getElementById('hist-turma').textContent = turmaAtual;
+  document.getElementById('hist').innerHTML = (HISTORICO[turmaAtual]||[]).map(function(h){
+    var i = Math.round(h[1]/h[2]*100);
+    var cor = i >= 85 ? 'var(--ok)' : (i >= 70 ? 'var(--warn)' : 'var(--bad)');
+    return '<div><small>'+h[0]+'</small><b style="color:'+cor+'">'+i+'%</b>'+
+      '<span class="tnum">'+h[1]+' de '+h[2]+'</span></div>';
+  }).join('');
 }
-document.getElementById('tb-presenca').addEventListener('click', function(e){
+
+document.getElementById('lista-chamada').addEventListener('click', function(e){
   var b = e.target.closest('.seg button'); if(!b) return;
-  marcas[b.closest('.seg').dataset.aluno] = b.dataset.v;
-  renderPresenca();
+  var nome = b.closest('.ath').dataset.aluno;
+  marcas[nome] = marcas[nome] === b.dataset.v ? '' : b.dataset.v;   /* clicar de novo desmarca */
+  renderChamada();
 });
-renderPresenca();
+document.getElementById('lista-chamada').addEventListener('change', function(e){
+  var s = e.target.closest('[data-just]'); if(!s) return;
+  justificativas[s.dataset.just] = s.value;
+});
+
+document.getElementById('btn-todos').onclick = function(){
+  turmaLista().forEach(function(a){ marcas[a.n] = 'P'; });
+  renderChamada();
+  toast('Todos marcados como presentes — ajuste quem faltou');
+};
+document.getElementById('btn-limpar').onclick = function(){
+  turmaLista().forEach(function(a){ marcas[a.n] = ''; });
+  renderChamada();
+};
+document.getElementById('btn-salvar').onclick = function(){
+  var lista = turmaLista();
+  var falta = lista.filter(function(a){ return !marcas[a.n]; }).length;
+  if(falta){ toast('Ainda faltam ' + falta + ' atleta(s) sem marcação'); return; }
+  var p = lista.filter(function(a){ return marcas[a.n]==='P'; }).length;
+  toast('Chamada do ' + turmaAtual + ' salva · ' + p + ' de ' + lista.length + ' presentes');
+};
+
+renderChamada();
 
 /* ---------------- financeiro ---------------- */
 var meses = [
-  ['Abr',3.9,2.4],['Mai',4.1,2.6],['Jun',4.0,2.2],
-  ['Jul',3.6,2.8],['Ago',4.2,2.3],['Set',4.32,2.51]
+  ['Abr',2.10,1.42],['Mai',2.28,1.51],['Jun',2.34,1.38],
+  ['Jul',1.95,1.60],['Ago',2.40,1.44],['Set',1.97,1.45]
 ];
-var teto = 7.2;
+var teto = 4.0;
 document.getElementById('chart').innerHTML = meses.map(function(m){
   return '<div class="bar"><b class="tnum">'+m[1].toFixed(1)+'</b><div class="stack">'+
     '<i style="height:'+(m[1]/teto*100)+'%"></i>'+
@@ -529,17 +943,62 @@ document.getElementById('chart').innerHTML = meses.map(function(m){
     '</div><span>'+m[0]+'</span></div>';
 }).join('');
 var lancamentos = [
-  ['Mensalidades Sub-11','02/09','+ R$ 1.170','ok'],
-  ['Aluguel do campo','01/09','− R$ 1.400',''],
+  ['Mensalidades Sub-11','02/09','+ R$ 390','ok'],
+  ['Aluguel do campo','01/09','− R$ 900',''],
   ['Kit uniforme (8 un.)','30/08','+ R$ 640','ok'],
-  ['Bolas e coletes','28/08','− R$ 480',''],
-  ['Mensalidades Sub-15','26/08','+ R$ 900','ok'],
+  ['Bolas e coletes','28/08','− R$ 320',''],
+  ['Mensalidades Sub-15','26/08','+ R$ 300','ok'],
   ['Arbitragem amistoso','24/08','− R$ 230','']
 ];
 document.getElementById('tb-lanc').innerHTML = lancamentos.map(function(l){
   return '<tr><td><b>'+l[0]+'</b><br><small style="color:var(--ink-3)">'+l[1]+'</small></td>'+
     '<td class="r tnum" style="font-weight:600;'+(l[3]==='ok'?'color:var(--ok)':'color:var(--ink-2)')+'">'+l[2]+'</td></tr>';
 }).join('');
+
+/* resumo financeiro derivado dos alunos */
+var UNIFORMES = 640, SAIDAS = 1450;
+function brl(v){ return 'R$ ' + v.toLocaleString('pt-BR'); }
+function renderResumo(){
+  var previsto = 0, recebido = 0, aberto = 0, atrasado = 0, pagas = 0, devedores = 0;
+  alunos.forEach(function(a){
+    var v = MENS[a.cat];
+    previsto += v;
+    if(a.st === 'pago'){ recebido += v; pagas++; }
+    else { aberto += v; if(a.st === 'atraso'){ atrasado += v; devedores++; } }
+  });
+  var freqMedia = Math.round(alunos.reduce(function(s,a){ return s + pct(a); },0) / alunos.length);
+  var entradas = recebido + UNIFORMES;
+
+  document.getElementById('kpi-ativos').textContent = alunos.length;
+  document.getElementById('kpi-freq').textContent = freqMedia + '%';
+  document.getElementById('kpi-receb').textContent = brl(recebido);
+  document.getElementById('kpi-receb-sub').textContent = pagas + ' de ' + alunos.length + ' mensalidades · ' + brl(previsto) + ' previstos';
+  document.getElementById('kpi-atraso').textContent = brl(atrasado);
+  document.getElementById('kpi-atraso-sub').textContent = devedores + ' responsáveis';
+
+  document.getElementById('fin-in').textContent = brl(entradas);
+  document.getElementById('fin-saldo').textContent = brl(entradas - SAIDAS);
+  document.getElementById('fin-receber').textContent = brl(aberto);
+  document.getElementById('fin-receber-sub').textContent = (alunos.length - pagas) + ' mensalidades em aberto';
+
+  document.getElementById('sub-alunos').textContent = alunos.length + ' atletas matriculados em 4 categorias';
+  document.getElementById('sub-cobrancas').textContent = devedores + ' responsáveis com mensalidade vencida — total de ' + brl(atrasado) + ',00';
+  document.getElementById('nav-pill').textContent = devedores;
+
+  /* mensalidades por categoria */
+  document.getElementById('tb-catfin').innerHTML = ['Sub-9','Sub-11','Sub-13','Sub-15'].map(function(c){
+    var t = alunos.filter(function(a){ return a.cat===c; });
+    var pg = t.filter(function(a){ return a.st==='pago'; }).length;
+    var v = MENS[c];
+    return '<tr><td><b>'+c+'</b></td><td class="tnum" style="color:var(--ink-2)">R$ '+v+',00</td>'+
+      '<td class="r tnum">'+t.length+'</td>'+
+      '<td class="r"><span class="tag ok">'+pg+'</span></td>'+
+      '<td class="r"><span class="tag '+((t.length-pg)?'warn':'ok')+'">'+(t.length-pg)+'</span></td>'+
+      '<td class="r tnum" style="color:var(--ink-3)">'+brl(t.length*v)+'</td>'+
+      '<td class="r tnum"><b>'+brl(pg*v)+'</b></td></tr>';
+  }).join('');
+}
+renderResumo();
 
 /* ---------------- cobranças ---------------- */
 var devedores = alunos.filter(function(a){ return a.st==='atraso'; });
@@ -577,7 +1036,6 @@ function abrirCobranca(i){
 
 /* ---------------- novo aluno ---------------- */
 var POSICOES = ['Goleiro','Zagueiro','Lateral','Volante','Meia','Ponta','Atacante'];
-var ativos = 42;
 
 function opts(lista, sel){
   return lista.map(function(o){
@@ -704,31 +1162,42 @@ function abrirNovoAluno(){
     if(falhou){ el.querySelector('.invalid input').focus(); return; }
 
     var cat = q('#na-cat').value;
+    var nasc = q('#na-nasc').value;
     alunos.unshift({
       n: nome,
       num: parseInt(q('#na-num').value, 10) || sugerido,
       cat: cat,
       pos: q('#na-pos').value,
       resp: resp,
+      par: q('#na-par').value,
       tel: q('#na-tel').value.trim() || '(62) 90000-0000',
       st: 'vence',
       dias: 0,
-      freq: '0/12'
+      freq: '0/12',
+      nasc: nasc ? nasc.split('-').reverse().join('/') : '—',
+      h: '',
+      obs: q('#na-saude').value.trim() || '—'
     });
-    marcas[nome] = 'P';
-    ativos++;
-    document.getElementById('kpi-ativos').textContent = ativos;
-    document.getElementById('sub-alunos').textContent = ativos + ' atletas matriculados em 4 categorias';
+    marcas[nome] = '';
 
     catAtual = cat;
+    termo = '';
+    document.getElementById('busca-aluno').value = '';
     Array.prototype.forEach.call(document.querySelectorAll('#chips-cat .chip'), function(x){
       x.setAttribute('aria-pressed', String(x.dataset.c === catAtual));
     });
+    turmaAtual = cat;
+    Array.prototype.forEach.call(document.querySelectorAll('#chips-turma .chip'), function(x){
+      x.setAttribute('aria-pressed', String(x.dataset.t === turmaAtual));
+    });
     renderAlunos();
-    renderPresenca();
+    renderChamada();
+    renderFreqTurmas();
+    renderTurmas();
+    renderResumo();
 
     fechar();
-    toast(nome.split(' ')[0] + ' matriculado no ' + cat);
+    toast(nome.split(' ')[0] + ' matriculado no ' + cat + ' — já entra na próxima chamada');
   });
 }
 
