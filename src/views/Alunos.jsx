@@ -36,7 +36,7 @@ export default function Alunos({ alunos, categoria, setCategoria, onAbrirFicha, 
             />
           </div>
         }
-        extra={<Tag className="hidden shrink-0 sm:inline-block">{lista.length} atletas</Tag>}
+        extra={<Tag className="shrink-0">{lista.length} atletas</Tag>}
       >
         <div className="border-b border-line px-4 py-3">
           <Chips opcoes={FILTROS} valor={categoria} onChange={setCategoria} />

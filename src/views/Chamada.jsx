@@ -31,7 +31,7 @@ function Atleta({ a, marca, justificativa, onMarcar, onJustificar }) {
         </div>
       </div>
 
-      {!marca && <Tag className="hidden sm:inline-block">a marcar</Tag>}
+      {!marca && <Tag>a marcar</Tag>}
 
       {/* No celular ocupa a linha inteira; no desktop fica à direita. */}
       <div className="grid w-full grid-cols-3 overflow-hidden rounded-xl border border-line sm:flex sm:w-auto sm:rounded-lg">

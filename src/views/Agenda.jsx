@@ -66,7 +66,7 @@ export default function Agenda({ alunos }) {
                     {t.dias} · {t.prof}
                   </small>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex w-full items-center gap-3 pl-12 sm:w-auto sm:gap-4 sm:pl-0">
                   <span className="tnum text-xs text-ink2">{qtd} atletas</span>
                   <span className="tnum text-xs text-ink2">R$ {MENS[t.cat]}</span>
                   <Tag tom={vagas <= 2 ? 'warn' : 'ok'}>{vagas} vagas</Tag>

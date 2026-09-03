@@ -68,7 +68,7 @@ export default function Cobrancas({ alunos, resumo, onCobrar }) {
                 </div>
                 <b className="tnum shrink-0 text-[15px]">R$ {MENS[a.cat]}</b>
               </div>
-              <Btn onClick={() => onCobrar(a)} className="mt-3 w-full sm:ml-12 sm:w-auto">
+              <Btn variante="ghost" onClick={() => onCobrar(a)} className="mt-3 w-full sm:ml-12 sm:w-auto">
                 Enviar lembrete
               </Btn>
             </li>

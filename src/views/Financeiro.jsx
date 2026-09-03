@@ -26,7 +26,7 @@ export default function Financeiro({ alunos, resumo }) {
                 <b className="tnum text-[11px] font-semibold text-ink2">{entrada.toFixed(1)}</b>
                 <span className="flex h-full flex-col justify-end gap-0.5">
                   <i className="block rounded-t-sm bg-accent" style={{ height: `${(entrada / TETO_GRAFICO) * 100}%` }} />
-                  <i className="block rounded-b-sm bg-surface2" style={{ height: `${(saida / TETO_GRAFICO) * 100}%` }} />
+                  <i className="block rounded-b-sm bg-ink3/40" style={{ height: `${(saida / TETO_GRAFICO) * 100}%` }} />
                 </span>
                 <span className="text-[11px] tracking-wide text-ink3 uppercase">{mes}</span>
               </div>
@@ -34,7 +34,7 @@ export default function Financeiro({ alunos, resumo }) {
           </div>
           <div className="mt-3.5 flex gap-4 text-xs text-ink3">
             <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-xs bg-accent" />Entradas</span>
-            <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-xs bg-surface2" />Saídas</span>
+            <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-xs bg-ink3/40" />Saídas</span>
           </div>
         </Panel>
 
