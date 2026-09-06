@@ -1,21 +1,16 @@
 {
-  "name": "escolinha-craque-do-amanha",
+  "name": "escolinha",
   "private": true,
-  "version": "1.0.0",
-  "type": "module",
+  "description": "Atalhos para o front (frontend/) e para o banco (backend/).",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "@vitejs/plugin-react": "^6.1.1",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.2.2"
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "setup": "npm --prefix frontend install",
+    "db:start": "supabase --workdir backend start",
+    "db:stop": "supabase --workdir backend stop",
+    "db:reset": "supabase --workdir backend db reset",
+    "db:push": "supabase --workdir backend db push",
+    "db:diff": "supabase --workdir backend db diff"
   }
 }
