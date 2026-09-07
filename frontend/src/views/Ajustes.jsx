@@ -6,7 +6,7 @@ import {
 import { PageHead } from '../Shell.jsx';
 import { useAcao, useConvites, useEquipe, useQuesitos, useTurmas } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
-import { salvarEscolinha } from '../api/escolinha.js';
+import { apagar as apagarEscolinha, salvarEscolinha } from '../api/escolinha.js';
 import * as apiTurmas from '../api/turmas.js';
 import * as apiEquipe from '../api/equipe.js';
 import * as apiAvaliacoes from '../api/avaliacoes.js';
@@ -28,6 +28,7 @@ export default function Ajustes() {
         <Quesitos />
         <Equipe />
         <Conta />
+        {escolinha?.papel === 'dono' && <ZonaDeRisco />}
       </div>
     </>
   );
@@ -545,6 +546,73 @@ function Equipe() {
         onFechar={() => setRemovendo(null)}
       />
     </>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Apagar leva tudo em cascata, então o botão pede o nome digitado —
+   fricção proposital, do tamanho do estrago. */
+function ZonaDeRisco() {
+  const toast = useToast();
+  const { escolinha, escolinhas, recarregar, trocarEscolinha } = useSessao();
+  const [aberto, setAberto] = useState(false);
+  const [confirmacao, setConfirmacao] = useState('');
+  const [erro, setErro] = useState(null);
+
+  const apagar = useAcao(() => apagarEscolinha(escolinha.id), {
+    sucesso: async () => {
+      const sobraram = escolinhas.filter((e) => e.id !== escolinha.id);
+      await recarregar();
+      if (sobraram[0]) trocarEscolinha(sobraram[0].id);
+      toast(`${escolinha.nome} foi apagada.`);
+      setAberto(false);
+      setConfirmacao('');
+    },
+  });
+
+  if (!escolinha) return null;
+  const confere = confirmacao.trim() === escolinha.nome;
+
+  return (
+    <Panel titulo="Apagar a escolinha" corpo className="!border-bad/40">
+      <p className="text-[13px] text-ink2">
+        Some com tudo: atletas, responsáveis, chamadas, mensalidades, caixa e as fotos. Não há
+        como desfazer. Serve para tirar uma escolinha criada por engano.
+      </p>
+
+      {!aberto ? (
+        <Btn variante="perigo" className="mt-3.5" onClick={() => setAberto(true)}>
+          Apagar {escolinha.nome}
+        </Btn>
+      ) : (
+        <div className="mt-3.5 space-y-3">
+          <Field
+            label={`Digite "${escolinha.nome}" para confirmar`}
+            erro={erro}
+          >
+            <Input
+              value={confirmacao}
+              onChange={(e) => { setConfirmacao(e.target.value); setErro(null); }}
+              placeholder={escolinha.nome}
+              autoFocus
+            />
+          </Field>
+          <div className="flex flex-wrap gap-2">
+            <Btn variante="ghost" onClick={() => { setAberto(false); setConfirmacao(''); setErro(null); }}>
+              Cancelar
+            </Btn>
+            <Btn
+              variante="perigo"
+              disabled={!confere}
+              carregando={apagar.isPending}
+              onClick={() => apagar.mutate(undefined, { onError: (e) => setErro(e.message) })}
+            >
+              Apagar para sempre
+            </Btn>
+          </div>
+        </div>
+      )}
+    </Panel>
   );
 }
 

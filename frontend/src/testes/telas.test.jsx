@@ -24,17 +24,59 @@ vi.mock('../api/matriculas.js', () => ({
   recusar: vi.fn(),
 }));
 
+const sessaoFalsa = vi.hoisted(() => ({
+  carregando: false,
+  sessao: null,
+  perfil: null,
+  escolinhas: [],
+  escolinha: null,
+  escolinhaId: null,
+  trocarEscolinha: vi.fn(),
+  recarregar: vi.fn(),
+  sair: vi.fn(),
+}));
+
+vi.mock('../estado/Sessao.jsx', () => ({
+  useSessao: () => sessaoFalsa,
+  ProvedorSessao: ({ children }) => children,
+}));
+
+vi.mock('../api/auth.js', () => ({
+  cadastrar: vi.fn(),
+  entrar: vi.fn(),
+  criarEscolinha: vi.fn(),
+  recuperarSenha: vi.fn(),
+  sessaoAtual: vi.fn(),
+  aoMudarSessao: vi.fn(),
+  sair: vi.fn(),
+  meuPerfil: vi.fn(),
+  salvarPerfil: vi.fn(),
+  trocarSenha: vi.fn(),
+}));
+
+vi.mock('../api/escolinha.js', () => ({
+  minhasEscolinhas: vi.fn(),
+  salvarEscolinha: vi.fn(),
+  apagar: vi.fn(),
+  trocarCodigoMatricula: vi.fn(),
+  equipe: vi.fn(),
+  painelResumo: vi.fn(),
+}));
+
 vi.mock('../api/portal.js', () => ({
   abrir: vi.fn(),
   avisarPagamento: vi.fn(),
 }));
 
 import Login from '../views/Login.jsx';
+import PrimeiraEscolinha from '../views/PrimeiraEscolinha.jsx';
 import Matricula from '../views/Matricula.jsx';
 import Portal from '../views/Portal.jsx';
 import SemConfiguracao from '../views/SemConfiguracao.jsx';
 import * as apiMatriculas from '../api/matriculas.js';
 import * as apiPortal from '../api/portal.js';
+import * as apiAuth from '../api/auth.js';
+import * as apiEscolinha from '../api/escolinha.js';
 
 function montar(elemento, { rota = '/' } = {}) {
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -191,5 +233,60 @@ describe('portal do responsável', () => {
 
     expect(await screen.findByText(/este link não está valendo/i)).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText('Helena Duarte')).not.toBeInTheDocument());
+  });
+});
+
+/* Regressão. O signUp devolve a sessão e o onAuthStateChange dispara na
+   hora, lendo a lista de escolinhas antes de criar_escolinha terminar.
+   Sem recarregar aqui, o app caía em "crie a sua escolinha" e o
+   professor criava uma segunda escolinha igual. */
+describe('cadastro não deixa criar escolinha duas vezes', () => {
+  it('recarrega a sessão e assume a escolinha recém-criada', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    apiAuth.cadastrar.mockResolvedValue({ confirmarEmail: false, escolinhaId: 'esc-1' });
+
+    montar(<Login />);
+    await user.click(screen.getByRole('tab', { name: /registre-se/i }));
+    await user.type(screen.getByLabelText(/seu nome/i), 'Ricardo');
+    await user.type(screen.getByLabelText(/nome da escolinha/i), 'Craque do Amanhã');
+    await user.type(screen.getByLabelText(/e-mail/i), 'ricardo@exemplo.com');
+    await user.type(screen.getByLabelText(/senha/i), 'segredo123');
+    await user.click(screen.getByRole('button', { name: /criar conta e entrar/i }));
+
+    await waitFor(() => expect(sessaoFalsa.recarregar).toHaveBeenCalled());
+    expect(sessaoFalsa.trocarEscolinha).toHaveBeenCalledWith('esc-1');
+    expect(apiAuth.cadastrar).toHaveBeenCalledWith(
+      expect.objectContaining({ escolinha: 'Craque do Amanhã' })
+    );
+  });
+
+  it('com a lista velha, a tela de primeira escolinha adota a que já existe', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    apiEscolinha.minhasEscolinhas.mockResolvedValue([{ id: 'esc-1', nome: 'Craque do Amanhã' }]);
+
+    montar(<PrimeiraEscolinha />);
+    await user.type(screen.getByLabelText(/nome da escolinha/i), 'Craque do Amanhã');
+    await user.click(screen.getByRole('button', { name: /criar escolinha/i }));
+
+    await waitFor(() => expect(sessaoFalsa.recarregar).toHaveBeenCalled());
+    expect(apiAuth.criarEscolinha).not.toHaveBeenCalled();
+  });
+
+  it('com a lista mesmo vazia, cria normalmente', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    apiEscolinha.minhasEscolinhas.mockResolvedValue([]);
+
+    montar(<PrimeiraEscolinha />);
+    await user.type(screen.getByLabelText(/nome da escolinha/i), 'Nova Escolinha');
+    await user.click(screen.getByRole('button', { name: /criar escolinha/i }));
+
+    await waitFor(() =>
+      expect(apiAuth.criarEscolinha).toHaveBeenCalledWith(
+        expect.objectContaining({ nome: 'Nova Escolinha' })
+      )
+    );
   });
 });

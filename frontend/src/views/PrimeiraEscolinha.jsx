@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Alerta, Btn, Field, Input, useToast } from '../ui.jsx';
 import { criarEscolinha } from '../api/auth.js';
+import { minhasEscolinhas } from '../api/escolinha.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import { Crest } from './Login.jsx';
 
 /* Quem se cadastrou com confirmação de e-mail ligada chega ao primeiro
-   login sem escolinha nenhuma. Também serve para abrir uma segunda. */
+   login sem escolinha nenhuma. Só aparece quando a lista está vazia. */
 export default function PrimeiraEscolinha() {
   const toast = useToast();
   const { recarregar, sair, escolinhas } = useSessao();
@@ -18,6 +19,16 @@ export default function PrimeiraEscolinha() {
     setEnviando(true);
     const f = new FormData(e.currentTarget);
     try {
+      /* Esta tela só aparece com a lista vazia. Se aqui já houver uma, a
+         lista estava velha — criar outra deixaria o professor com duas
+         escolinhas iguais, e sem entender de onde saiu a segunda. */
+      const existentes = await minhasEscolinhas();
+      if (existentes.length > 0) {
+        await recarregar();
+        toast('Sua escolinha já estava criada.');
+        return;
+      }
+
       await criarEscolinha({ nome: f.get('nome').trim(), cidade: f.get('cidade').trim() });
       await recarregar();
       toast('Escolinha criada — as turmas iniciais já estão lá.');

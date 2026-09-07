@@ -24,7 +24,11 @@ export async function entrar({ email, senha }) {
 /* Cadastro: cria a conta e, em seguida, a escolinha. As duas coisas são
    separadas de propósito — a escolinha nasce por RPC, que já registra o
    dono e as turmas iniciais. Se o projeto exigir confirmação de e-mail,
-   não há sessão ainda e a criação fica para o primeiro login. */
+   não há sessão ainda e a criação fica para o primeiro login.
+
+   Devolve o id da escolinha porque quem chama precisa recarregar a
+   sessão depois: o `onAuthStateChange` dispara no signUp e lê a lista de
+   escolinhas antes desta RPC terminar, então a lista chega vazia. */
 export async function cadastrar({ email, senha, nome, escolinha, cidade }) {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -35,8 +39,8 @@ export async function cadastrar({ email, senha, nome, escolinha, cidade }) {
 
   if (!data.session) return { confirmarEmail: true };
 
-  await rpc('criar_escolinha', { p_nome: escolinha, p_cidade: cidade || null });
-  return { confirmarEmail: false };
+  const escolinhaId = await rpc('criar_escolinha', { p_nome: escolinha, p_cidade: cidade || null });
+  return { confirmarEmail: false, escolinhaId };
 }
 
 /* Chamado no primeiro login de quem se cadastrou com confirmação de

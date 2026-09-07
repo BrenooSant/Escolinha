@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alerta, Btn, Field, Input, useToast } from '../ui.jsx';
 import * as apiAuth from '../api/auth.js';
+import { useSessao } from '../estado/Sessao.jsx';
 
 function Campo({ children }) {
   return <svg viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"
@@ -41,6 +42,7 @@ const DESTAQUES = [
 
 export default function Login() {
   const toast = useToast();
+  const { recarregar, trocarEscolinha } = useSessao();
   const [cadastro, setCadastro] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -66,12 +68,17 @@ export default function Login() {
           setAviso('Conta criada. Confirme o e-mail que enviamos e depois entre por aqui.');
           setCadastro(false);
         } else {
+          // O provedor já leu a sessão antes da escolinha existir; sem
+          // este recarregar, o app cai na tela de "crie a sua escolinha"
+          // e o professor acaba criando uma segunda.
+          await recarregar();
+          if (r.escolinhaId) trocarEscolinha(r.escolinhaId);
           toast('Escolinha criada — bem-vindo!');
         }
       } else {
         await apiAuth.entrar({ email: f.get('email').trim(), senha: f.get('senha') });
       }
-      // a sessão nova é captada pelo ProvedorSessao; nada a fazer aqui
+      // no login comum a sessão nova é captada pelo ProvedorSessao
     } catch (err) {
       setErro(err.message);
     } finally {
