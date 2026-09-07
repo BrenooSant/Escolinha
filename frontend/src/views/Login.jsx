@@ -127,6 +127,16 @@ export default function Login() {
       {/* formulário */}
       <div className="grid place-items-center px-5 py-8 sm:px-8">
         <div className="w-full max-w-[360px]">
+          {/* A marca fica aqui, e não na faixa ao lado: ela é verde vivo,
+              que sobre o verde do painel praticamente desaparece. */}
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="Craque do Amanhã"
+            width={640}
+            height={338}
+            className="mb-6 h-auto w-[132px] select-none"
+          />
+
           <div role="tablist" className="mb-6 flex gap-0.5 rounded-xl bg-surface2 p-1">
             {[['Entrar', false], ['Registre-se', true]].map(([rot, modo]) => (
               <button
