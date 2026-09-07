@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Btn, Chips, Erro, Esqueleto, Jersey, Panel, Tag, Tile, Vazio, useToast } from '../ui.jsx';
 import { PageHead } from '../Shell.jsx';
-import { useAcao, useAtrasos, useMensalidades, usePainel } from '../hooks/dados.js';
+import { useAcao, useAtrasos, useAvisados, useMensalidades, usePainel } from '../hooks/dados.js';
 import * as apiFinanceiro from '../api/financeiro.js';
 import { brl, brlCurto, dataBR, hojeISO } from '../lib/format.js';
 import { exportarCSV } from '../lib/csv.js';
@@ -20,8 +20,14 @@ export default function Cobrancas() {
   const doMes = useMensalidades(competencia);
   const hoje = hojeISO();
 
+  const avisados = useAvisados();
+
   const baixar = useAcao((id) => apiFinanceiro.registrarPagamento(id), {
     sucesso: () => toast('Pagamento registrado — já entrou no caixa'),
+  });
+
+  const negar = useAcao((id) => apiFinanceiro.limparAviso(id), {
+    sucesso: () => toast('Aviso descartado — a mensalidade voltou para a fila'),
   });
 
   const lista = useMemo(() => {
@@ -72,6 +78,57 @@ export default function Cobrancas() {
         </div>
       )}
 
+      {avisados.data?.length > 0 && (
+        <Panel
+          className="mb-4 !border-warn"
+          titulo="Responsáveis avisaram que pagaram"
+          extra={<Tag tom="warn">{avisados.data.length}</Tag>}
+        >
+          <p className="border-b border-line px-4 py-2.5 text-xs text-ink3">
+            Confira no extrato antes de confirmar. Confirmar dá baixa e lança a entrada no caixa.
+          </p>
+          <ul>
+            {avisados.data.map((m) => (
+              <li key={m.id} className="border-b border-line p-3 last:border-b-0 sm:px-4">
+                <div className="flex items-start gap-3">
+                  <Jersey num={m.aluno_numero ?? '·'} />
+                  <div className="min-w-0 flex-1">
+                    <b className="block truncate text-[13.5px] font-semibold">{m.aluno_nome}</b>
+                    <small className="block text-xs text-ink3">
+                      {[m.turma_nome, m.responsavel_nome].filter(Boolean).join(' · ')}
+                    </small>
+                    <small className="block text-xs text-ink3">
+                      avisou em {dataBR(m.avisado_em)} · venceu em {dataBR(m.vencimento)}
+                    </small>
+                    {m.aviso_obs && (
+                      <p className="mt-1.5 rounded-lg bg-surface2 px-2.5 py-1.5 text-[12px] text-ink2">
+                        “{m.aviso_obs}”
+                      </p>
+                    )}
+                  </div>
+                  <b className="tnum shrink-0 text-[15px]">{brl(m.valor_centavos)}</b>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:ml-12 sm:flex">
+                  <Btn
+                    onClick={() => baixar.mutate(m.id)}
+                    carregando={baixar.isPending && baixar.variables === m.id}
+                  >
+                    Confirmar pagamento
+                  </Btn>
+                  <Btn
+                    variante="ghost"
+                    onClick={() => negar.mutate(m.id)}
+                    carregando={negar.isPending && negar.variables === m.id}
+                  >
+                    Não caiu ainda
+                  </Btn>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
       <Panel
         titulo={<Chips opcoes={ABAS} valor={aba} onChange={setAba} />}
         extra={<Tag tom={aba === 'Atrasadas' ? 'bad' : aba === 'Pagas' ? 'ok' : 'warn'}>{lista.length}</Tag>}
@@ -120,6 +177,9 @@ export default function Cobrancas() {
                       )}
                       {m.dias_atraso > 0 && (
                         <span className="text-[11px] text-ink3">venceu em {dataBR(m.vencimento)}</span>
+                      )}
+                      {m.avisado_em && (
+                        <Tag tom="warn">responsável avisou que pagou</Tag>
                       )}
                       {m.lembretes > 0 && (
                         <span className="text-[11px] text-ink3">

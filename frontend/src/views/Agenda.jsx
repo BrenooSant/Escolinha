@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alerta, Btn, Confirmar, Erro, Esqueleto, Eyebrow, Field, Input, Jersey, Panel,
@@ -25,6 +25,7 @@ export default function Agenda() {
   const { escolinhaId } = useSessao();
   const [semana, setSemana] = useState(() => inicioDaSemana(new Date()));
   const [novo, setNovo] = useState(false);
+  const [editando, setEditando] = useState(null);
   const [selecionado, setSelecionado] = useState(null);
   const [apagando, setApagando] = useState(null);
 
@@ -198,7 +199,13 @@ export default function Agenda() {
         )}
       </Panel>
 
-      <FormTreino aberto={novo} turmas={turmas.data ?? []} onFechar={() => setNovo(false)} />
+      <FormTreino
+        key={editando?.id ?? 'novo'}
+        aberto={novo || Boolean(editando)}
+        treino={editando}
+        turmas={turmas.data ?? []}
+        onFechar={() => { setNovo(false); setEditando(null); }}
+      />
 
       {/* ações de um treino */}
       <Sheet
@@ -236,6 +243,12 @@ export default function Agenda() {
                 </button>
               )}
               <button
+                onClick={() => { setEditando(selecionado); setSelecionado(null); }}
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold hover:bg-surface2"
+              >
+                ✎ Mudar horário ou local
+              </button>
+              <button
                 onClick={() => setApagando(selecionado)}
                 className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold text-bad hover:bg-surface2"
               >
@@ -259,21 +272,31 @@ export default function Agenda() {
   );
 }
 
-function FormTreino({ aberto, turmas, onFechar }) {
+/* Serve para agendar e para remarcar: com `treino`, entra em edição. */
+function FormTreino({ aberto, treino, turmas, onFechar }) {
   const toast = useToast();
   const { escolinhaId, escolinha } = useSessao();
   const [erro, setErro] = useState(null);
   const [tipo, setTipo] = useState('treino');
+  const editando = Boolean(treino);
 
-  const criar = useAcao((dados) => apiAgenda.criar(escolinhaId, dados), {
-    sucesso: () => { toast('Agendado'); onFechar(); },
-  });
+  useEffect(() => {
+    if (aberto) {
+      setErro(null);
+      setTipo(treino?.tipo ?? 'treino');
+    }
+  }, [aberto, treino]);
+
+  const salvar = useAcao(
+    (dados) => (editando ? apiAgenda.salvar(treino.id, dados) : apiAgenda.criar(escolinhaId, dados)),
+    { sucesso: () => { toast(editando ? 'Treino remarcado' : 'Agendado'); onFechar(); } }
+  );
 
   const enviar = (e) => {
     e.preventDefault();
     setErro(null);
     const f = new FormData(e.currentTarget);
-    criar.mutate(
+    salvar.mutate(
       {
         turma_id: f.get('turma_id'),
         data: f.get('data'),
@@ -287,11 +310,13 @@ function FormTreino({ aberto, turmas, onFechar }) {
   };
 
   return (
-    <Sheet aberto={aberto} onFechar={onFechar} rotulo="Agendar treino">
+    <Sheet aberto={aberto} onFechar={onFechar} rotulo={editando ? 'Remarcar treino' : 'Agendar treino'}>
       <header className="px-4 pt-4 sm:px-5 sm:pt-5">
-        <h3 className="text-lg sm:text-xl">Agendar</h3>
+        <h3 className="text-lg sm:text-xl">{editando ? 'Remarcar' : 'Agendar'}</h3>
         <p className="mt-1 text-[13px] text-ink3">
-          Para os treinos que se repetem toda semana, use a grade da turma em Ajustes.
+          {editando
+            ? 'As presenças já marcadas continuam ligadas a este treino.'
+            : 'Para os treinos que se repetem toda semana, use a grade da turma em Ajustes.'}
         </p>
       </header>
 
@@ -313,22 +338,22 @@ function FormTreino({ aberto, turmas, onFechar }) {
           </div>
 
           <Field label="Turma" className="sm:col-span-2">
-            <Select name="turma_id" required defaultValue={turmas[0]?.id ?? ''}>
+            <Select name="turma_id" required defaultValue={treino?.turma_id ?? turmas[0]?.id ?? ''}>
               {turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
             </Select>
           </Field>
           <Field label="Data">
-            <Input type="date" name="data" required defaultValue={hojeISO()} />
+            <Input type="date" name="data" required defaultValue={treino?.data ?? hojeISO()} />
           </Field>
           <Field label="Horário">
-            <Input type="time" name="hora" required defaultValue="18:00" />
+            <Input type="time" name="hora" required defaultValue={treino?.hora?.slice(0, 5) ?? '18:00'} />
           </Field>
           <Field label="Local" className={tipo === 'jogo' ? '' : 'sm:col-span-2'}>
-            <Input name="local" defaultValue={escolinha?.local_padrao ?? ''} placeholder="Campo do Bosque" />
+            <Input name="local" defaultValue={treino?.local ?? escolinha?.local_padrao ?? ''} placeholder="Campo do Bosque" />
           </Field>
           {tipo === 'jogo' && (
             <Field label="Adversário">
-              <Input name="adversario" placeholder="Escolinha Bandeirante" />
+              <Input name="adversario" defaultValue={treino?.adversario ?? ''} placeholder="Escolinha Bandeirante" />
             </Field>
           )}
           <div className="col-span-full"><Alerta>{erro}</Alerta></div>
@@ -336,7 +361,7 @@ function FormTreino({ aberto, turmas, onFechar }) {
 
         <SheetFoot>
           <Btn type="button" variante="ghost" onClick={onFechar}>Cancelar</Btn>
-          <Btn type="submit" carregando={criar.isPending}>Agendar</Btn>
+          <Btn type="submit" carregando={salvar.isPending}>{editando ? 'Salvar' : 'Agendar'}</Btn>
         </SheetFoot>
       </form>
     </Sheet>

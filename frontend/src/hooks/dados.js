@@ -10,6 +10,8 @@ import * as apiAgenda from '../api/agenda.js';
 import * as apiChamada from '../api/chamada.js';
 import * as apiFinanceiro from '../api/financeiro.js';
 import * as apiMatriculas from '../api/matriculas.js';
+import * as apiAvaliacoes from '../api/avaliacoes.js';
+import * as apiEquipe from '../api/equipe.js';
 
 const ativo = (id) => ({ enabled: Boolean(id) });
 
@@ -113,7 +115,58 @@ export function useEquipe() {
   const { escolinhaId } = useSessao();
   return useQuery({
     queryKey: ['equipe', escolinhaId],
-    queryFn: () => apiEscolinha.equipe(escolinhaId),
+    queryFn: () => apiEquipe.membros(escolinhaId),
+    ...ativo(escolinhaId),
+  });
+}
+
+export function useConvites() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['convites', escolinhaId],
+    queryFn: () => apiEquipe.convites(escolinhaId),
+    ...ativo(escolinhaId),
+  });
+}
+
+export function useQuesitos() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['quesitos', escolinhaId],
+    queryFn: () => apiAvaliacoes.quesitos(escolinhaId),
+    ...ativo(escolinhaId),
+  });
+}
+
+export function useAvaliacoes(alunoId) {
+  return useQuery({
+    queryKey: ['avaliacoes', alunoId],
+    queryFn: () => apiAvaliacoes.doAluno(alunoId),
+    ...ativo(alunoId),
+  });
+}
+
+export function useMensalidadesDoAluno(alunoId) {
+  return useQuery({
+    queryKey: ['mensalidades-aluno', alunoId],
+    queryFn: () => apiFinanceiro.doAluno(alunoId),
+    ...ativo(alunoId),
+  });
+}
+
+export function useResponsavel(responsavelId) {
+  return useQuery({
+    queryKey: ['responsavel', responsavelId],
+    queryFn: () => apiAlunos.responsavel(responsavelId),
+    ...ativo(responsavelId),
+  });
+}
+
+export function useAvisados() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['avisados', escolinhaId],
+    queryFn: () => apiFinanceiro.avisados(escolinhaId),
     ...ativo(escolinhaId),
   });
 }
@@ -129,8 +182,12 @@ export function useAcao(fn, { sucesso } = {}) {
     mutationFn: fn,
     onSuccess: (dados, variaveis) => {
       cliente.invalidateQueries({
-        predicate: (q) => q.queryKey.includes(escolinhaId) || q.queryKey[0] === 'chamada'
-          || q.queryKey[0] === 'historico' || q.queryKey[0] === 'treinos-turma',
+        predicate: (q) =>
+          q.queryKey.includes(escolinhaId) ||
+          ['chamada', 'historico', 'treinos-turma', 'avaliacoes', 'mensalidades-aluno',
+            'responsavel'].includes(
+            q.queryKey[0]
+          ),
       });
       sucesso?.(dados, variaveis);
     },

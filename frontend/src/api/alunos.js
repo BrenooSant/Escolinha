@@ -67,6 +67,16 @@ export async function apagar(id) {
   return exec(supabase.from('alunos').delete().eq('id', id));
 }
 
+/* Traz o token junto: é com ele que se monta o link do portal. */
+export async function responsavel(id) {
+  if (!id) return null;
+  return exec(supabase.from('responsaveis').select('*').eq('id', id).maybeSingle());
+}
+
+export async function trocarTokenResponsavel(id) {
+  return rpc('trocar_token_responsavel', { p_responsavel: id });
+}
+
 export async function listarResponsaveis(escolinhaId) {
   return exec(
     supabase.from('responsaveis').select('*').eq('escolinha_id', escolinhaId).order('nome')

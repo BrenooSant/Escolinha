@@ -8,6 +8,7 @@ import * as apiMatriculas from '../api/matriculas.js';
 import * as apiAlunos from '../api/alunos.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import { dataBR, idade, linkWhatsApp, primeiroNome } from '../lib/format.js';
+import * as apiFotos from '../api/fotos.js';
 import LinkMatricula from './LinkMatricula.jsx';
 
 export default function PreMatriculas() {
@@ -45,9 +46,7 @@ export default function PreMatriculas() {
             {pendentes.data.map((p) => (
               <li key={p.id} className="border-b border-line p-3 last:border-b-0 sm:px-4">
                 <div className="flex items-start gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accentsoft text-base">
-                    📝
-                  </span>
+                  <MiniFoto caminho={p.foto_path} />
                   <div className="min-w-0 flex-1">
                     <b className="block truncate text-[13.5px] font-semibold">{p.aluno_nome}</b>
                     <small className="block text-xs text-ink3">
@@ -99,6 +98,25 @@ export default function PreMatriculas() {
   );
 }
 
+/* A foto que o responsável mandou fica num canto do bucket que ele só
+   pode gravar; a leitura é nossa, com URL assinada. */
+function MiniFoto({ caminho, tamanho = 'size-9 rounded-lg' }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    if (caminho) apiFotos.url(caminho).then((u) => vivo && setUrl(u));
+    return () => { vivo = false; };
+  }, [caminho]);
+
+  if (!caminho) {
+    return (
+      <span className={`grid ${tamanho} shrink-0 place-items-center bg-accentsoft text-base`}>📝</span>
+    );
+  }
+  if (!url) return <span className={`${tamanho} shrink-0 animate-pulse bg-surface2`} />;
+  return <img src={url} alt="" className={`${tamanho} shrink-0 bg-surface2 object-cover`} />;
+}
+
 function Analise({ ficha, onFechar }) {
   const toast = useToast();
   const { escolinhaId } = useSessao();
@@ -131,11 +149,14 @@ function Analise({ ficha, onFechar }) {
 
   return (
     <Sheet aberto onFechar={onFechar} largura="max-w-lg" rotulo={`Analisar ${ficha.aluno_nome}`}>
-      <header className="px-4 pt-4 sm:px-5 sm:pt-5">
-        <h3 className="text-lg sm:text-xl">{ficha.aluno_nome}</h3>
-        <p className="mt-1 text-[13px] text-ink3">
-          Enviada por {ficha.resp_nome} em {dataBR(ficha.enviada_em)}
-        </p>
+      <header className="flex items-center gap-3.5 px-4 pt-4 sm:px-5 sm:pt-5">
+        <MiniFoto caminho={ficha.foto_path} tamanho="size-14 rounded-xl" />
+        <div className="min-w-0">
+          <h3 className="truncate text-lg sm:text-xl">{ficha.aluno_nome}</h3>
+          <p className="mt-1 text-[13px] text-ink3">
+            Enviada por {ficha.resp_nome} em {dataBR(ficha.enviada_em)}
+          </p>
+        </div>
       </header>
 
       <div className="flex-1 space-y-3.5 overflow-y-auto p-4 sm:px-5">

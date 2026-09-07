@@ -7,6 +7,8 @@ import { Carregando } from './ui.jsx';
 import Login from './views/Login.jsx';
 import PrimeiraEscolinha from './views/PrimeiraEscolinha.jsx';
 import Matricula from './views/Matricula.jsx';
+import Portal from './views/Portal.jsx';
+import Convite from './views/Convite.jsx';
 import Painel from './views/Painel.jsx';
 import Agenda from './views/Agenda.jsx';
 import Alunos from './views/Alunos.jsx';
@@ -24,8 +26,12 @@ export default function App() {
 
   return (
     <Routes>
-      {/* pública: o link que o responsável recebe */}
+      {/* públicas: os links que saem da escolinha para fora */}
       <Route path="/matricula/:codigo" element={<Matricula />} />
+      <Route path="/portal/:token" element={<Portal />} />
+
+      {/* o convite precisa abrir deslogado: quem recebe pode nem ter conta */}
+      <Route path="/convite/:token" element={<Convite />} />
 
       <Route path="*" element={
         carregando ? (

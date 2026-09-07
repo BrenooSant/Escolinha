@@ -4,10 +4,12 @@ import {
   SheetFoot, Tag, useToast,
 } from '../ui.jsx';
 import { PageHead } from '../Shell.jsx';
-import { useAcao, useEquipe, useTurmas } from '../hooks/dados.js';
+import { useAcao, useConvites, useEquipe, useQuesitos, useTurmas } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import { salvarEscolinha } from '../api/escolinha.js';
 import * as apiTurmas from '../api/turmas.js';
+import * as apiEquipe from '../api/equipe.js';
+import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiAuth from '../api/auth.js';
 import { brl, deCentavos, DIAS_SEMANA, DIAS_CURTOS, hora, iniciais, mascaraTelefone, paraCentavos } from '../lib/format.js';
 import LinkMatricula from './LinkMatricula.jsx';
@@ -23,7 +25,8 @@ export default function Ajustes() {
         <DadosEscolinha />
         <LinkMatricula />
         <Turmas />
-        {escolinha?.papel === 'dono' && <Equipe />}
+        <Quesitos />
+        <Equipe />
         <Conta />
       </div>
     </>
@@ -298,38 +301,250 @@ function FormTurma({ aberto, turma, onFechar }) {
 }
 
 /* ---------------------------------------------------------------- */
-function Equipe() {
-  const equipe = useEquipe();
+function Quesitos() {
+  const toast = useToast();
+  const { escolinhaId } = useSessao();
+  const quesitos = useQuesitos();
+  const [novo, setNovo] = useState('');
+  const [apagando, setApagando] = useState(null);
+  const [erro, setErro] = useState(null);
+
+  const criar = useAcao(
+    (nome) => apiAvaliacoes.criarQuesito(escolinhaId, nome, (quesitos.data?.length ?? 0) + 1),
+    { sucesso: () => { setNovo(''); toast('Quesito criado'); } }
+  );
+
+  const apagar = useAcao(() => apiAvaliacoes.apagarQuesito(apagando.id), {
+    sucesso: () => { toast('Quesito removido'); setApagando(null); },
+  });
+
+  const enviar = (e) => {
+    e.preventDefault();
+    setErro(null);
+    if (novo.trim().length < 2) return setErro('Escreva o nome do quesito.');
+    criar.mutate(novo.trim(), { onError: (err) => setErro(err.message) });
+  };
 
   return (
-    <Panel titulo="Equipe técnica" extra={<Tag>{equipe.data?.length ?? 0}</Tag>}>
-      {equipe.isPending ? (
-        <Esqueleto linhas={2} />
-      ) : (
-        <>
+    <>
+      <Panel titulo="Quesitos de avaliação" extra={<Tag>{quesitos.data?.length ?? 0}</Tag>}>
+        <p className="border-b border-line px-4 py-2.5 text-xs text-ink3">
+          O que você olha quando avalia um atleta. Cada avaliação dá nota de 1 a 5 em cada um.
+        </p>
+
+        {quesitos.isPending ? (
+          <Esqueleto linhas={3} />
+        ) : (
+          <ul>
+            {(quesitos.data ?? []).map((q) => (
+              <li key={q.id} className="flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-b-0">
+                <b className="min-w-0 flex-1 truncate text-[13px] font-semibold">{q.nome}</b>
+                <button
+                  onClick={() => setApagando(q)}
+                  className="px-1 text-ink3 transition hover:text-bad"
+                  aria-label={`Apagar ${q.nome}`}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form onSubmit={enviar} className="flex flex-wrap gap-2 border-t border-line p-4">
+          <Input
+            value={novo}
+            onChange={(e) => setNovo(e.target.value)}
+            placeholder="Cabeceio, visão de jogo, pontualidade…"
+            maxLength={40}
+            className="min-w-0 flex-1"
+          />
+          <Btn type="submit" carregando={criar.isPending}>Adicionar</Btn>
+          {erro && <div className="w-full"><Alerta>{erro}</Alerta></div>}
+        </form>
+      </Panel>
+
+      <Confirmar
+        aberto={Boolean(apagando)}
+        titulo={`Apagar o quesito ${apagando?.nome}?`}
+        texto="As notas já dadas nesse quesito somem das avaliações anteriores."
+        rotulo="Apagar"
+        carregando={apagar.isPending}
+        onConfirmar={() => apagar.mutate()}
+        onFechar={() => setApagando(null)}
+      />
+    </>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+function Equipe() {
+  const toast = useToast();
+  const { escolinha, escolinhaId, perfil } = useSessao();
+  const equipe = useEquipe();
+  const convites = useConvites();
+  const [email, setEmail] = useState('');
+  const [erro, setErro] = useState(null);
+  const [removendo, setRemovendo] = useState(null);
+
+  const dono = escolinha?.papel === 'dono';
+
+  const convidar = useAcao((dados) => apiEquipe.convidar(escolinhaId, dados), {
+    sucesso: (c) => {
+      setEmail('');
+      copiarLink(c.token);
+    },
+  });
+
+  const cancelar = useAcao((id) => apiEquipe.cancelarConvite(id), {
+    sucesso: () => toast('Convite cancelado'),
+  });
+
+  const remover = useAcao(() => apiEquipe.remover(escolinhaId, removendo.perfil.id), {
+    sucesso: () => { toast('Removido da equipe'); setRemovendo(null); },
+  });
+
+  const trocarPapel = useAcao(
+    ({ perfilId, papel }) => apiEquipe.trocarPapel(escolinhaId, perfilId, papel),
+    { sucesso: () => toast('Papel atualizado') }
+  );
+
+  const urlConvite = (token) => {
+    const { origin, pathname } = window.location;
+    return `${origin}${pathname}#/convite/${token}`;
+  };
+
+  const copiarLink = async (token) => {
+    try {
+      await navigator.clipboard.writeText(urlConvite(token));
+      toast('Link do convite copiado — mande para o professor');
+    } catch {
+      toast('Convite criado. Copie o link na lista abaixo.');
+    }
+  };
+
+  const enviar = (e) => {
+    e.preventDefault();
+    setErro(null);
+    convidar.mutate({ email: email.trim() || null }, { onError: (err) => setErro(err.message) });
+  };
+
+  return (
+    <>
+      <Panel titulo="Equipe técnica" extra={<Tag>{equipe.data?.length ?? 0}</Tag>}>
+        {equipe.isPending ? (
+          <Esqueleto linhas={2} />
+        ) : (
           <ul>
             {(equipe.data ?? []).map((m) => (
-              <li key={m.perfil?.id} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
+              <li key={m.perfil?.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 last:border-b-0">
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface2 text-xs font-bold text-ink2">
                   {iniciais(m.perfil?.nome)}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <b className="block truncate text-[13px] font-semibold">{m.perfil?.nome}</b>
+                  <b className="block truncate text-[13px] font-semibold">
+                    {m.perfil?.nome}
+                    {m.perfil?.id === perfil?.id && <span className="text-ink3"> (você)</span>}
+                  </b>
                   <small className="text-xs text-ink3">{m.perfil?.telefone || 'sem telefone'}</small>
                 </div>
-                <Tag tom={m.papel === 'dono' ? 'ok' : 'neutro'}>
-                  {m.papel === 'dono' ? 'Coordenação' : 'Professor'}
-                </Tag>
+
+                {dono && m.perfil?.id !== perfil?.id ? (
+                  <Select
+                    value={m.papel}
+                    onChange={(e) => trocarPapel.mutate({ perfilId: m.perfil.id, papel: e.target.value })}
+                    className="!w-auto !py-1.5 !text-xs"
+                    aria-label={`Papel de ${m.perfil?.nome}`}
+                  >
+                    <option value="professor">Professor</option>
+                    <option value="dono">Coordenação</option>
+                  </Select>
+                ) : (
+                  <Tag tom={m.papel === 'dono' ? 'ok' : 'neutro'}>
+                    {m.papel === 'dono' ? 'Coordenação' : 'Professor'}
+                  </Tag>
+                )}
+
+                {dono && m.perfil?.id !== perfil?.id && (
+                  <button
+                    onClick={() => setRemovendo(m)}
+                    className="px-1 text-ink3 transition hover:text-bad"
+                    aria-label={`Remover ${m.perfil?.nome}`}
+                  >
+                    ✕
+                  </button>
+                )}
               </li>
             ))}
           </ul>
-          <p className="px-4 py-3 text-xs text-ink3">
-            Para incluir outro professor, peça que ele crie a conta e envie o e-mail — o convite por
-            dentro do painel ainda não está pronto.
+        )}
+
+        {dono ? (
+          <>
+            <form onSubmit={enviar} className="border-t border-line p-4">
+              <p className="mb-2.5 text-xs text-ink3">
+                Gere um link de convite e mande para o professor. Ele cria a conta (ou entra na
+                dele) e o link o coloca na equipe. Vale 14 dias, e serve uma vez só.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  placeholder="E-mail dele (opcional, só para você lembrar)"
+                  className="min-w-0 flex-1"
+                />
+                <Btn type="submit" carregando={convidar.isPending}>Gerar convite</Btn>
+              </div>
+              {erro && <div className="mt-2"><Alerta>{erro}</Alerta></div>}
+            </form>
+
+            {convites.data?.length > 0 && (
+              <ul className="border-t border-line">
+                {convites.data.map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <b className="block truncate text-[12.5px] font-semibold">
+                        {c.email || 'Convite sem e-mail'}
+                      </b>
+                      <small className="text-[11px] text-ink3">
+                        {new Date(c.expira_em) < new Date()
+                          ? 'expirado'
+                          : `expira em ${new Date(c.expira_em).toLocaleDateString('pt-BR')}`}
+                      </small>
+                    </div>
+                    <Btn variante="ghost" className="!min-h-9 !text-xs" onClick={() => copiarLink(c.token)}>
+                      Copiar link
+                    </Btn>
+                    <button
+                      onClick={() => cancelar.mutate(c.id)}
+                      className="px-1 text-ink3 transition hover:text-bad"
+                      aria-label="Cancelar convite"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="border-t border-line px-4 py-3 text-xs text-ink3">
+            Só a coordenação pode convidar ou remover gente da equipe.
           </p>
-        </>
-      )}
-    </Panel>
+        )}
+      </Panel>
+
+      <Confirmar
+        aberto={Boolean(removendo)}
+        titulo={`Tirar ${removendo?.perfil?.nome} da equipe?`}
+        texto="Ele perde o acesso a esta escolinha na hora. O que ele já registrou continua onde está."
+        rotulo="Remover"
+        carregando={remover.isPending}
+        onConfirmar={() => remover.mutate()}
+        onFechar={() => setRemovendo(null)}
+      />
+    </>
   );
 }
 

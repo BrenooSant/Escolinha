@@ -7,7 +7,9 @@ import { PageHead } from '../Shell.jsx';
 import { useAcao, useLancamentos, useMensalidades, usePainel, useTurmas } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import * as apiFinanceiro from '../api/financeiro.js';
-import { brl, brlCurto, dataCurta, hojeISO, mesCurto, mesExtenso, paraCentavos, paraISO } from '../lib/format.js';
+import {
+  brl, brlCurto, dataCurta, deCentavos, hojeISO, mesCurto, mesExtenso, paraCentavos, paraISO,
+} from '../lib/format.js';
 import { exportarCSV } from '../lib/csv.js';
 
 const CATEGORIAS_SAIDA = ['Estrutura', 'Material', 'Competição', 'Pessoal', 'Transporte', 'Outros'];
@@ -19,6 +21,7 @@ export default function Financeiro() {
   const painel = usePainel();
   const turmas = useTurmas();
   const [novo, setNovo] = useState(false);
+  const [editando, setEditando] = useState(null);
   const [apagando, setApagando] = useState(null);
 
   const competencia = painel.data?.competencia;
@@ -136,15 +139,22 @@ export default function Financeiro() {
             <ul className="max-h-96 overflow-y-auto">
               {lancamentos.data.slice(0, 40).map((l) => (
                 <li key={l.id} className="group flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-b-0">
-                  <div className="min-w-0 flex-1">
-                    <b className="block truncate text-[13px] font-semibold">{l.descricao}</b>
-                    <small className="text-xs text-ink3">
-                      {dataCurta(l.data)}{l.categoria ? ` · ${l.categoria}` : ''}
-                    </small>
-                  </div>
-                  <span className={`tnum shrink-0 text-[13px] font-semibold ${l.tipo === 'entrada' ? 'text-ok' : 'text-ink2'}`}>
-                    {l.tipo === 'entrada' ? '+ ' : '− '}{brl(l.valor_centavos)}
-                  </span>
+                  {/* mensalidade não se edita aqui: ela vem da baixa do pagamento */}
+                  <button
+                    onClick={() => !l.mensalidade_id && setEditando(l)}
+                    disabled={Boolean(l.mensalidade_id)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <b className="block truncate text-[13px] font-semibold">{l.descricao}</b>
+                      <small className="text-xs text-ink3">
+                        {dataCurta(l.data)}{l.categoria ? ` · ${l.categoria}` : ''}
+                      </small>
+                    </span>
+                    <span className={`tnum shrink-0 text-[13px] font-semibold ${l.tipo === 'entrada' ? 'text-ok' : 'text-ink2'}`}>
+                      {l.tipo === 'entrada' ? '+ ' : '− '}{brl(l.valor_centavos)}
+                    </span>
+                  </button>
                   {!l.mensalidade_id && (
                     <button
                       onClick={() => setApagando(l)}
@@ -215,7 +225,12 @@ export default function Financeiro() {
         )}
       </Panel>
 
-      <FormLancamento aberto={novo} onFechar={() => setNovo(false)} />
+      <FormLancamento
+        key={editando?.id ?? 'novo'}
+        aberto={novo || Boolean(editando)}
+        lancamento={editando}
+        onFechar={() => { setNovo(false); setEditando(null); }}
+      />
 
       <Confirmar
         aberto={Boolean(apagando)}
@@ -230,15 +245,20 @@ export default function Financeiro() {
   );
 }
 
-function FormLancamento({ aberto, onFechar }) {
+function FormLancamento({ aberto, lancamento, onFechar }) {
   const toast = useToast();
   const { escolinhaId } = useSessao();
-  const [tipo, setTipo] = useState('saida');
+  const [tipo, setTipo] = useState(lancamento?.tipo ?? 'saida');
   const [erro, setErro] = useState(null);
+  const editando = Boolean(lancamento);
 
-  const criar = useAcao((dados) => apiFinanceiro.criarLancamento(escolinhaId, dados), {
-    sucesso: () => { toast('Lançamento registrado'); onFechar(); },
-  });
+  const salvar = useAcao(
+    (dados) =>
+      editando
+        ? apiFinanceiro.salvarLancamento(lancamento.id, dados)
+        : apiFinanceiro.criarLancamento(escolinhaId, dados),
+    { sucesso: () => { toast(editando ? 'Lançamento atualizado' : 'Lançamento registrado'); onFechar(); } }
+  );
 
   const enviar = (e) => {
     e.preventDefault();
@@ -247,7 +267,7 @@ function FormLancamento({ aberto, onFechar }) {
     const centavos = paraCentavos(f.get('valor'));
     if (centavos <= 0) return setErro('Informe um valor maior que zero.');
 
-    criar.mutate(
+    salvar.mutate(
       {
         descricao: f.get('descricao').trim(),
         tipo,
@@ -260,9 +280,9 @@ function FormLancamento({ aberto, onFechar }) {
   };
 
   return (
-    <Sheet aberto={aberto} onFechar={onFechar} rotulo="Novo lançamento">
+    <Sheet aberto={aberto} onFechar={onFechar} rotulo={editando ? 'Editar lançamento' : 'Novo lançamento'}>
       <header className="px-4 pt-4 sm:px-5 sm:pt-5">
-        <h3 className="text-lg sm:text-xl">Novo lançamento</h3>
+        <h3 className="text-lg sm:text-xl">{editando ? 'Editar lançamento' : 'Novo lançamento'}</h3>
         <p className="mt-1 text-[13px] text-ink3">
           As mensalidades pagas entram sozinhas — aqui vão as outras contas.
         </p>
@@ -286,16 +306,22 @@ function FormLancamento({ aberto, onFechar }) {
           </div>
 
           <Field label="Descrição" className="sm:col-span-2">
-            <Input name="descricao" required minLength={2} placeholder="Aluguel do campo" />
+            <Input name="descricao" required minLength={2} defaultValue={lancamento?.descricao ?? ''} placeholder="Aluguel do campo" />
           </Field>
           <Field label="Valor">
-            <Input name="valor" required inputMode="decimal" placeholder="900,00" />
+            <Input
+              name="valor"
+              required
+              inputMode="decimal"
+              defaultValue={lancamento ? deCentavos(lancamento.valor_centavos) : ''}
+              placeholder="900,00"
+            />
           </Field>
           <Field label="Data">
-            <Input type="date" name="data" required defaultValue={hojeISO()} />
+            <Input type="date" name="data" required defaultValue={lancamento?.data ?? hojeISO()} />
           </Field>
           <Field label="Categoria" className="sm:col-span-2">
-            <Select name="categoria" defaultValue={tipo === 'saida' ? 'Estrutura' : 'Uniforme'}>
+            <Select name="categoria" defaultValue={lancamento?.categoria ?? (tipo === 'saida' ? 'Estrutura' : 'Uniforme')}>
               {(tipo === 'saida' ? CATEGORIAS_SAIDA : CATEGORIAS_ENTRADA).map((c) => (
                 <option key={c}>{c}</option>
               ))}
@@ -306,7 +332,7 @@ function FormLancamento({ aberto, onFechar }) {
 
         <SheetFoot>
           <Btn type="button" variante="ghost" onClick={onFechar}>Cancelar</Btn>
-          <Btn type="submit" carregando={criar.isPending}>Registrar</Btn>
+          <Btn type="submit" carregando={salvar.isPending}>{editando ? 'Salvar' : 'Registrar'}</Btn>
         </SheetFoot>
       </form>
     </Sheet>

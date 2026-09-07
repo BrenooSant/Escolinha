@@ -111,3 +111,46 @@ function rotuloCobranca(a) {
   if (a.mensalidade_status === 'aberta') return 'Em aberto';
   return '—';
 }
+
+/* Recibo de uma mensalidade paga, para o responsável guardar. */
+export function reciboPDF({ escolinha, aluno, mensalidade }) {
+  const doc = new jsPDF({ unit: 'pt', format: 'a5', orientation: 'landscape' });
+  const largura = doc.internal.pageSize.getWidth();
+
+  doc.setFillColor(...VERDE);
+  doc.rect(0, 0, largura, 70, 'F');
+  doc.setTextColor(255).setFont('helvetica', 'bold').setFontSize(15);
+  doc.text(escolinha.nome, 34, 32);
+  doc.setFont('helvetica', 'normal').setFontSize(9);
+  doc.text('Recibo de mensalidade', 34, 50);
+  if (escolinha.cidade) doc.text(escolinha.cidade, largura - 34, 50, { align: 'right' });
+
+  doc.setTextColor(20).setFont('helvetica', 'bold').setFontSize(26);
+  doc.text(brl(mensalidade.valor_centavos), 34, 118);
+
+  doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...CINZA);
+  doc.text('Referente a', 34, 148);
+  doc.text('Atleta', 34, 178);
+  doc.text('Responsável', 34, 208);
+  doc.text('Pago em', 34, 238);
+
+  doc.setTextColor(20).setFont('helvetica', 'bold');
+  doc.text(mesExtenso(mensalidade.competencia), 130, 148);
+  doc.text(aluno.nome + (aluno.turma_nome ? ` · ${aluno.turma_nome}` : ''), 130, 178);
+  doc.text(aluno.responsavel_nome || '—', 130, 208);
+  doc.text(
+    `${dataBR(mensalidade.pago_em)}${mensalidade.metodo ? ` · ${mensalidade.metodo}` : ''}`,
+    130,
+    238
+  );
+
+  doc.setDrawColor(217, 223, 208).line(34, 262, largura - 34, 262);
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...CINZA);
+  doc.text(
+    `Emitido em ${new Date().toLocaleDateString('pt-BR')} · documento gerado pelo sistema da escolinha`,
+    34,
+    280
+  );
+
+  doc.save(`recibo-${slug(aluno.nome)}-${mensalidade.competencia.slice(0, 7)}.pdf`);
+}

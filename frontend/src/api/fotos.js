@@ -27,6 +27,22 @@ export async function url(caminho, segundos = 3600) {
   return data.signedUrl;
 }
 
+/* Foto enviada pelo responsável na matrícula, sem login. A política do
+   Storage só deixa gravar em `pre/<escolinha>/`, e só gravar: quem lê
+   depois é o professor daquela escolinha. */
+export async function enviarNaMatricula(escolinhaId, arquivo) {
+  const ext = (arquivo.name.split('.').pop() || 'jpg').toLowerCase();
+  const aleatorio = crypto.randomUUID();
+  const caminho = `pre/${escolinhaId}/${aleatorio}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(caminho, arquivo, { contentType: arquivo.type });
+  if (error) throw new Error(error.message);
+
+  return caminho;
+}
+
 export async function remover(alunoId, caminho) {
   if (caminho) await supabase.storage.from(BUCKET).remove([caminho]);
   await exec(supabase.from('alunos').update({ foto_path: null }).eq('id', alunoId));
