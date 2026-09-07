@@ -3,9 +3,9 @@
   "private": true,
   "description": "Atalhos para o front (frontend/) e para o banco (backend/).",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
+    "dev": "npm --prefix frontend run dev --",
     "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview",
+    "preview": "npm --prefix frontend run preview --",
     "setup": "npm --prefix frontend install && npm --prefix backend/testes install",
     "db:start": "supabase --workdir backend start",
     "db:stop": "supabase --workdir backend stop",
