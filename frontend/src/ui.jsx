@@ -165,22 +165,44 @@ export function Textarea({ className = '', ...props }) {
 }
 
 /* ---------------- folha / diálogo ---------------- */
+/* Um diálogo abre por cima do outro — confirmar "apagar" em cima da ficha,
+   por exemplo. Se cada um guardasse o overflow que achou ao abrir, o de
+   cima fotografaria o `hidden` posto pelo de baixo e o devolveria ao
+   fechar, deixando a página travada para sempre (é SPA: nem trocar de
+   tela destrava). Por isso a trava é contada: fecha na primeira e só
+   abre quando a última sai. */
+let travasDeFundo = 0;
+
+function travarFundo() {
+  if (travasDeFundo++ === 0) document.body.style.overflow = 'hidden';
+}
+
+function destravarFundo() {
+  travasDeFundo = Math.max(0, travasDeFundo - 1);
+  if (travasDeFundo === 0) document.body.style.overflow = '';
+}
+
 /* No celular sobe de baixo e ocupa a largura toda; no desktop vira um
    diálogo centrado. Fecha no Esc, no clique fora e trava o scroll do fundo. */
 export function Sheet({ aberto, onFechar, children, largura = 'max-w-lg', rotulo }) {
   const fundo = useRef(null);
 
+  /* onFechar costuma ser uma arrow inline, que muda de identidade a cada
+     render do pai. Guardada numa ref, o efeito da trava não precisa dela
+     nas dependências e não fica abrindo e fechando à toa. */
+  const fechar = useRef(onFechar);
+  fechar.current = onFechar;
+
   useEffect(() => {
     if (!aberto) return;
-    const esc = (e) => e.key === 'Escape' && onFechar();
+    const esc = (e) => e.key === 'Escape' && fechar.current();
     document.addEventListener('keydown', esc);
-    const antes = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    travarFundo();
     return () => {
       document.removeEventListener('keydown', esc);
-      document.body.style.overflow = antes;
+      destravarFundo();
     };
-  }, [aberto, onFechar]);
+  }, [aberto]);
 
   if (!aberto) return null;
 

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Sheet } from './ui.jsx';
+import { Alerta, Btn, Field, Input, Sheet, SheetFoot, useToast } from './ui.jsx';
 import { Crest } from './views/Login.jsx';
+import { criarEscolinha } from './api/auth.js';
 import { useSessao } from './estado/Sessao.jsx';
 import { usePainel } from './hooks/dados.js';
 import { iniciais } from './lib/format.js';
@@ -15,6 +16,7 @@ const PATHS = {
   financeiro: 'M3 7h18v12H3zM3 11h18M7 15h3',
   cobrancas: 'M12 3.5 2.8 19.5h18.4zM12 10v4M12 17h.01',
   matriculas: 'M12 5v14M5 12h14',
+  relatorios: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h7M10 17h4',
   ajustes: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-2.72 1.13V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.79-1.07l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 3.5 14.2H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.07-2.79l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9.8 3.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.79 1.07l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 20.5 9.8h.5a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.2',
   mais: 'M5 12h.01M12 12h.01M19 12h.01',
   sair: 'M15 4h4v16h-4M11 8l-4 4 4 4M7 12h9',
@@ -38,6 +40,7 @@ const MENU = [
   { para: '/financeiro', icone: 'financeiro', rotulo: 'Financeiro' },
   { para: '/cobrancas', icone: 'cobrancas', rotulo: 'Cobranças', selo: 'devedores' },
   { para: '/matriculas', icone: 'matriculas', rotulo: 'Matrículas', selo: 'pre_matriculas' },
+  { para: '/relatorios', icone: 'relatorios', rotulo: 'Relatórios' },
   { para: '/ajustes', icone: 'ajustes', rotulo: 'Ajustes' },
 ];
 
@@ -48,6 +51,7 @@ const NO_MENU = MENU.filter((m) => !ABAS.includes(m.para));
 export default function Shell({ children }) {
   const [menu, setMenu] = useState(false);
   const [trocador, setTrocador] = useState(false);
+  const [novaEscolinha, setNovaEscolinha] = useState(false);
   const navegar = useNavigate();
   const { pathname } = useLocation();
   const { perfil, escolinha, escolinhas, trocarEscolinha, sair } = useSessao();
@@ -79,15 +83,17 @@ export default function Shell({ children }) {
       <aside className="sticky top-0 hidden h-dvh flex-col gap-5 border-r border-line bg-surface p-4 lg:flex">
         <Crest tom="escuro" className="text-[15px] text-ink" />
 
+        {/* Sempre clicável, mesmo com uma escolinha só: é por aqui que se
+            abre a segunda unidade, e antes disso a lista tem tamanho 1. */}
         <button
-          onClick={() => escolinhas.length > 1 && setTrocador(true)}
-          className="rounded-lg border border-line px-3 py-2 text-left transition hover:bg-surface2 disabled:cursor-default"
-          disabled={escolinhas.length <= 1}
+          onClick={() => setTrocador(true)}
+          className="rounded-lg border border-line px-3 py-2 text-left transition hover:bg-surface2"
+          title="Trocar de escolinha ou abrir outra unidade"
         >
           <span className="block text-[10px] font-semibold tracking-[0.12em] text-ink3 uppercase">Escolinha</span>
           <b className="mt-0.5 flex items-center gap-1.5 truncate text-[13px]">
             {escolinha?.nome}
-            {escolinhas.length > 1 && <Icon nome="trocar" className="ml-auto size-3.5 shrink-0 text-ink3" />}
+            <Icon nome="trocar" className="ml-auto size-3.5 shrink-0 text-ink3" />
           </b>
         </button>
 
@@ -130,10 +136,7 @@ export default function Shell({ children }) {
 
       {/* ---------- topo (celular) ---------- */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:hidden">
-        <button
-          onClick={() => escolinhas.length > 1 && setTrocador(true)}
-          className="flex min-w-0 items-center gap-2 text-left"
-        >
+        <button onClick={() => setTrocador(true)} className="flex min-w-0 items-center gap-2 text-left">
           <Crest tom="escuro" className="!text-[15px] text-ink" />
         </button>
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface2 text-xs font-bold text-ink2">
@@ -235,9 +238,88 @@ export default function Shell({ children }) {
               {e.id === escolinha?.id && <span className="ml-auto">✓</span>}
             </button>
           ))}
+
+          <hr className="my-2 border-line" />
+          <button
+            onClick={() => { setTrocador(false); setNovaEscolinha(true); }}
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm font-semibold hover:bg-surface2"
+          >
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-dashed border-line text-ink3">
+              +
+            </span>
+            <span className="min-w-0">
+              <b className="block">Abrir outra unidade</b>
+              <small className="text-[11px] font-normal text-ink3">
+                Atletas, caixa e chamada ficam separados de cada uma
+              </small>
+            </span>
+          </button>
         </div>
       </Sheet>
+
+      <NovaEscolinha aberto={novaEscolinha} onFechar={() => setNovaEscolinha(false)} />
     </div>
+  );
+}
+
+/* Segunda unidade. Cada escolinha é um tenant próprio — atletas, caixa,
+   equipe e link de matrícula não se misturam —, e quem cria entra como
+   dono dela. A troca é pelo mesmo seletor de sempre. */
+function NovaEscolinha({ aberto, onFechar }) {
+  const toast = useToast();
+  const { recarregar, trocarEscolinha } = useSessao();
+  const navegar = useNavigate();
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    setErro(null);
+    setEnviando(true);
+    const f = new FormData(e.currentTarget);
+    try {
+      const id = await criarEscolinha({
+        nome: f.get('nome').trim(),
+        cidade: f.get('cidade').trim(),
+      });
+      await recarregar();
+      trocarEscolinha(id);
+      onFechar();
+      navegar('/');
+      window.scrollTo(0, 0);
+      toast('Unidade criada — as turmas iniciais já estão lá.');
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <Sheet aberto={aberto} onFechar={onFechar} largura="max-w-md" rotulo="Abrir outra unidade">
+      <form onSubmit={enviar}>
+        <div className="px-5 pt-5 pb-1">
+          <h3 className="text-lg">Abrir outra unidade</h3>
+          <p className="mt-1.5 text-[13px] text-ink3">
+            Ela nasce com as turmas Sub-9, Sub-11, Sub-13 e Sub-15 e com o próprio link de
+            matrícula. Nada é compartilhado com a unidade atual.
+          </p>
+        </div>
+        <div className="space-y-3.5 px-5 py-4">
+          <Field label="Nome da unidade">
+            <Input name="nome" required minLength={2} placeholder="Craque do Amanhã · Setor Bueno" />
+          </Field>
+          <Field label="Cidade">
+            <Input name="cidade" placeholder="Goiânia, GO" />
+          </Field>
+          <Alerta>{erro}</Alerta>
+        </div>
+        <SheetFoot>
+          <Btn variante="ghost" type="button" onClick={onFechar}>Cancelar</Btn>
+          <Btn type="submit" carregando={enviando}>Criar unidade</Btn>
+        </SheetFoot>
+      </form>
+    </Sheet>
   );
 }
 
