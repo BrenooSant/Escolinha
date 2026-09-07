@@ -6,11 +6,14 @@
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "preview": "npm --prefix frontend run preview",
-    "setup": "npm --prefix frontend install",
+    "setup": "npm --prefix frontend install && npm --prefix backend/testes install",
     "db:start": "supabase --workdir backend start",
     "db:stop": "supabase --workdir backend stop",
     "db:reset": "supabase --workdir backend db reset",
     "db:push": "supabase --workdir backend db push",
-    "db:diff": "supabase --workdir backend db diff"
+    "db:diff": "supabase --workdir backend db diff",
+    "test": "npm run test:unidade && npm run test:banco",
+    "test:unidade": "npm --prefix frontend run test",
+    "test:banco": "npm --prefix backend/testes run test"
   }
 }

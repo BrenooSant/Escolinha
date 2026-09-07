@@ -53,6 +53,32 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 | **Matrículas** | Fichas recebidas pelo link público, para aprovar ou recusar |
 | **Ajustes** | Dados da escolinha, link de matrícula, turmas e grade semanal, equipe, conta |
 
+## Testes
+
+```bash
+npm test              # tudo
+npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
+npm run test:banco    # integração: fala com o Supabase de verdade
+```
+
+**134 testes.** Os de unidade cobrem as funções puras de formatação e
+montam as telas públicas num DOM, para pegar o que o build não pega —
+import faltando, componente indefinido, quebra na primeira pintura.
+
+Os de integração rodam contra o projeto Supabase, sem mock: as regras que
+importam (RLS, funções, políticas do Storage) moram no Postgres e só
+valem alguma coisa se forem exercitadas lá. Cada arquivo cria a própria
+escolinha e a apaga no fim — e a limpeza confere que apagou mesmo, porque
+um `delete` sem permissão devolve zero linhas *sem erro*.
+
+Eles usam duas contas fixas, reaproveitadas entre execuções, para não
+encher o Authentication de usuário descartável. Na primeira rodada as
+contas são criadas sozinhas; para isso a confirmação de e-mail precisa
+estar desligada, ou as contas precisam existir antes.
+
+Sem as chaves do Supabase, a suíte de integração é pulada em vez de
+falhar.
+
 ## Publicação
 
 O push na `main` dispara `.github/workflows/deploy.yml`. Antes do primeiro

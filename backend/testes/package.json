@@ -1,0 +1,16 @@
+{
+  "name": "escolinha-testes-banco",
+  "private": true,
+  "type": "module",
+  "description": "Testes de integração contra o Supabase: RLS, funções e Storage.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.115.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

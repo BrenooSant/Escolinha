@@ -12,8 +12,22 @@ export const brl = (centavos) =>
 export const brlCurto = (centavos) =>
   'R$ ' + Math.round((centavos ?? 0) / 100).toLocaleString('pt-BR');
 
+/* O professor digita "130", "130,50", "1.250,00" — e às vezes "130.5".
+   Com vírgula presente, o ponto é separador de milhar. Sem vírgula, um
+   único ponto seguido de uma ou duas casas é decimal: senão "130.5"
+   viraria R$ 1.305,00, que é o tipo de erro que só aparece no extrato. */
 export const paraCentavos = (texto) => {
-  const limpo = String(texto ?? '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+  const bruto = String(texto ?? '').replace(/[^\d,.-]/g, '');
+  if (!bruto) return 0;
+
+  let limpo;
+  if (bruto.includes(',')) {
+    limpo = bruto.replace(/\./g, '').replace(',', '.');
+  } else {
+    const partes = bruto.split('.');
+    limpo = partes.length === 2 && partes[1].length <= 2 ? bruto : bruto.replace(/\./g, '');
+  }
+
   const n = Number.parseFloat(limpo);
   return Number.isFinite(n) ? Math.round(n * 100) : 0;
 };

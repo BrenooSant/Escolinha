@@ -1,0 +1,50 @@
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unidade:
+    name: Unidade e renderização
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  banco:
+    name: Integração com o Supabase
+    runs-on: ubuntu-latest
+    # Falam com o projeto de verdade: sem as chaves, não há o que rodar.
+    # Em pull request de fora do repositório os secrets não são expostos.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    defaults:
+      run:
+        working-directory: backend/testes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/testes/package-lock.json
+      - run: npm ci
+      - run: npm test
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          TESTE_EMAIL: ${{ secrets.TESTE_EMAIL }}
+          TESTE_EMAIL_2: ${{ secrets.TESTE_EMAIL_2 }}
+          TESTE_SENHA: ${{ secrets.TESTE_SENHA }}

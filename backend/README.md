@@ -34,6 +34,21 @@ Para apontar para o projeto da nuvem, uma vez só:
 supabase --workdir backend link --project-ref SEU_REF
 ```
 
+## Testes
+
+`testes/` é um pacote npm à parte, com Vitest. Roda da raiz com
+`npm run test:banco`.
+
+| Arquivo | O que trava |
+|---|---|
+| `isolamento.test.js` | RLS: o anônimo não lê nada, e um professor não alcança a escolinha do outro |
+| `chamada.test.js` | Geração de treinos, marcação, e a conta da frequência caso a caso |
+| `financeiro.test.js` | Mensalidade por aluno, baixa, estorno e o reflexo no caixa |
+| `matricula.test.js` | Link público, validações, upload do responsável e a aprovação |
+| `portal.test.js` | O que o link do responsável mostra — e o que ele nunca pode mostrar |
+| `equipe.test.js` | Convite de uso único, papéis e a proteção do último dono |
+| `avaliacoes.test.js` | Notas, média e o que acontece ao apagar um quesito |
+
 ## Isolamento entre escolinhas
 
 Toda tabela do dia a dia tem `escolinha_id`, e a política é sempre a mesma:
