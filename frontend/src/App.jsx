@@ -16,6 +16,7 @@ import Chamada from './views/Chamada.jsx';
 import Financeiro from './views/Financeiro.jsx';
 import Cobrancas from './views/Cobrancas.jsx';
 import PreMatriculas from './views/PreMatriculas.jsx';
+import Relatorios from './views/Relatorios.jsx';
 import Ajustes from './views/Ajustes.jsx';
 import SemConfiguracao from './views/SemConfiguracao.jsx';
 
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/financeiro" element={<Financeiro />} />
               <Route path="/cobrancas" element={<Cobrancas />} />
               <Route path="/matriculas" element={<PreMatriculas />} />
+              <Route path="/relatorios" element={<Relatorios />} />
               <Route path="/ajustes" element={<Ajustes />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

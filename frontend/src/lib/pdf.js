@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { brl, dataBR, mesExtenso } from './format.js';
+import { brl, dataBR, idade, mesExtenso } from './format.js';
 import { slug } from './csv.js';
 
 const VERDE = [20, 101, 59];
@@ -102,6 +102,86 @@ export function relatorioMensalPDF({ escolinha, competencia, resumo, alunos, men
   }
 
   doc.save(`relatorio-${slug(escolinha.nome)}-${competencia.slice(0, 7)}.pdf`);
+}
+
+/* Relatório de atletas com o recorte escolhido na tela de Relatórios.
+   O filtro aplicado vai escrito no cabeçalho e no rodapé de toda página:
+   uma folha impressa que não diz o que está listando não serve de nada. */
+export function relatorioAlunosPDF({ escolinha, descricao, alunos, agruparPorTurma = false }) {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' });
+  const largura = doc.internal.pageSize.getWidth();
+  const altura = doc.internal.pageSize.getHeight();
+
+  doc.setFillColor(...VERDE);
+  doc.rect(0, 0, largura, 84, 'F');
+  doc.setTextColor(255);
+  doc.setFont('helvetica', 'bold').setFontSize(17);
+  doc.text(escolinha.nome, 40, 38);
+  doc.setFont('helvetica', 'normal').setFontSize(10);
+  doc.text(`Relação de atletas · ${alunos.length} atleta${alunos.length === 1 ? '' : 's'}`, 40, 58);
+  if (descricao) doc.text(descricao, 40, 74);
+
+  const cabecalho = [['#', 'Atleta', 'Nascimento', 'Idade', 'Turma', 'Posição',
+    'Responsável', 'WhatsApp', 'Freq.', 'Mensalidade']];
+
+  const linha = (a) => [
+    a.numero ?? '—',
+    a.nome,
+    dataBR(a.nascimento),
+    idade(a.nascimento) != null ? `${idade(a.nascimento)}` : '—',
+    a.turma_nome || '—',
+    a.posicao || '—',
+    a.responsavel_nome || '—',
+    a.responsavel_telefone || '—',
+    a.frequencia != null ? `${a.frequencia}%` : '—',
+    `${brl(a.valor_centavos)} · ${rotuloCobranca(a)}`,
+  ];
+
+  const comum = {
+    styles: { fontSize: 8, cellPadding: 3.5 },
+    headStyles: { fillColor: VERDE, fontSize: 8 },
+    alternateRowStyles: { fillColor: [244, 247, 242] },
+    margin: { left: 40, right: 40, bottom: 46 },
+    columnStyles: { 0: { cellWidth: 24 }, 8: { halign: 'right' } },
+  };
+
+  if (agruparPorTurma) {
+    /* Uma tabela por turma, com o subtotal no título. É como o professor
+       lê: primeiro a turma, depois quem está nela. */
+    const turmas = new Map();
+    for (const a of alunos) {
+      const chave = a.turma_nome || 'Sem turma';
+      if (!turmas.has(chave)) turmas.set(chave, []);
+      turmas.get(chave).push(a);
+    }
+    let y = 104;
+    for (const [nome, doGrupo] of [...turmas].sort((x, y2) => x[0].localeCompare(y2[0], 'pt-BR'))) {
+      doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(20);
+      doc.text(`${nome} — ${doGrupo.length} atleta${doGrupo.length === 1 ? '' : 's'}`, 40, y);
+      autoTable(doc, { ...comum, startY: y + 8, head: cabecalho, body: doGrupo.map(linha) });
+      y = doc.lastAutoTable.finalY + 28;
+      if (y > altura - 120) {
+        doc.addPage();
+        y = 56;
+      }
+    }
+  } else {
+    autoTable(doc, { ...comum, startY: 104, head: cabecalho, body: alunos.map(linha) });
+  }
+
+  const paginas = doc.getNumberOfPages();
+  for (let p = 1; p <= paginas; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...CINZA);
+    doc.text(
+      `${escolinha.nome}${descricao ? ` · ${descricao}` : ''} · gerado em ${new Date().toLocaleDateString('pt-BR')}`,
+      40,
+      altura - 22
+    );
+    doc.text(`${p}/${paginas}`, largura - 40, altura - 22, { align: 'right' });
+  }
+
+  doc.save(`atletas-${slug(escolinha.nome)}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 function rotuloCobranca(a) {

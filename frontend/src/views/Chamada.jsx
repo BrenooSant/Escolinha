@@ -9,6 +9,49 @@ import * as apiChamada from '../api/chamada.js';
 import { ICONE_MARCA, MARCA_CURTA, MOTIVOS, ROTULO_MARCA } from '../lib/constantes.js';
 import { corFreq, dataCurta, diaDaSemana, hojeISO, hora, paraISO } from '../lib/format.js';
 
+/* Rascunho da chamada.
+
+   Marcar 20 atletas leva minutos, e no meio disso o celular toca, chega
+   notificação, o dedo encosta numa aba de baixo. Antes, qualquer uma
+   dessas coisas apagava tudo sem avisar. Avisar não bastaria: quando o
+   iOS descarta a aba em segundo plano, não há diálogo que salve — só ter
+   guardado. Por isso o que está marcado fica no aparelho até a chamada
+   ser salva de verdade.
+
+   Uma semana de validade: rascunho de treino de mês passado é lixo. */
+const CHAVE_RASCUNHO = (treinoId) => `chamada:rascunho:${treinoId}`;
+const VALIDADE = 7 * 864e5;
+
+function lerRascunho(treinoId) {
+  try {
+    const bruto = localStorage.getItem(CHAVE_RASCUNHO(treinoId));
+    if (!bruto) return null;
+    const r = JSON.parse(bruto);
+    if (!r?.em || Date.now() - r.em > VALIDADE) {
+      localStorage.removeItem(CHAVE_RASCUNHO(treinoId));
+      return null;
+    }
+    return { marcas: r.marcas ?? {}, motivos: r.motivos ?? {} };
+  } catch {
+    return null; // aba anônima, storage cheio — seguir sem rascunho
+  }
+}
+
+function gravarRascunho(treinoId, marcas, motivos) {
+  try {
+    localStorage.setItem(
+      CHAVE_RASCUNHO(treinoId),
+      JSON.stringify({ marcas, motivos, em: Date.now() })
+    );
+  } catch { /* sem rascunho é pior, mas não pode derrubar a marcação */ }
+}
+
+function apagarRascunho(treinoId) {
+  try {
+    localStorage.removeItem(CHAVE_RASCUNHO(treinoId));
+  } catch { /* nada a fazer */ }
+}
+
 const BORDA = { P: 'border-l-ok', F: 'border-l-bad', J: 'border-l-warn', '': 'border-l-line' };
 const ATIVO = {
   P: 'bg-ok text-white border-ok',
@@ -128,18 +171,55 @@ function Marcacao({ treinoId }) {
   const [motivos, setMotivos] = useState({});
   const [erro, setErro] = useState(null);
   const [sujo, setSujo] = useState(false);
+  const [recuperado, setRecuperado] = useState(false);
 
   /* Parte do que já está gravado; enquanto o professor não mexer, um
-     refetch pode reescrever sem perigo. */
+     refetch pode reescrever sem perigo. Se houver rascunho de uma
+     marcação interrompida, ele ganha do que veio do servidor. */
   useEffect(() => {
     if (!consulta.data || sujo) return;
+    const rascunho = lerRascunho(treinoId);
+    if (rascunho) {
+      setMarcas(rascunho.marcas);
+      setMotivos(rascunho.motivos);
+      setSujo(true);
+      setRecuperado(true);
+      return;
+    }
     setMarcas(consulta.data.marcas);
     setMotivos(consulta.data.motivos);
-  }, [consulta.data, sujo]);
+  }, [consulta.data, sujo, treinoId]);
+
+  /* Guarda a cada toque: sair da tela deixa de perder o que foi marcado. */
+  useEffect(() => {
+    if (sujo) gravarRascunho(treinoId, marcas, motivos);
+  }, [sujo, marcas, motivos, treinoId]);
+
+  /* Fechar a aba ou recarregar não passa pelo React — aqui o navegador
+     é quem pergunta. */
+  useEffect(() => {
+    if (!sujo) return;
+    const avisar = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', avisar);
+    return () => window.removeEventListener('beforeunload', avisar);
+  }, [sujo]);
 
   const salvar = useAcao(() => apiChamada.salvar(treinoId, marcas, motivos), {
-    sucesso: () => setSujo(false),
+    sucesso: () => {
+      apagarRascunho(treinoId);
+      setSujo(false);
+      setRecuperado(false);
+    },
   });
+
+  /* Volta ao que está no banco e joga o rascunho fora. */
+  const descartarRascunho = () => {
+    apagarRascunho(treinoId);
+    setMarcas(consulta.data.marcas);
+    setMotivos(consulta.data.motivos);
+    setSujo(false);
+    setRecuperado(false);
+  };
 
   const treino = consulta.data?.treino;
   const elenco = consulta.data?.elenco ?? [];
@@ -210,6 +290,21 @@ function Marcacao({ treinoId }) {
           {treino.status === 'realizado' ? 'Salvar correção' : 'Salvar chamada'}
         </Btn>
       </PageHead>
+
+      {recuperado && (
+        <div className="mb-3.5 flex flex-wrap items-center gap-3 rounded-xl border border-warn/40 bg-warn/10 px-4 py-3">
+          <span className="text-[13px] text-ink2">
+            <b className="font-semibold">Marcação recuperada.</b>{' '}
+            Você saiu antes de salvar — está tudo aqui do jeito que ficou.
+          </span>
+          <button
+            onClick={descartarRascunho}
+            className="ml-auto shrink-0 text-xs font-semibold text-ink3 underline-offset-2 hover:text-bad hover:underline"
+          >
+            Descartar e recomeçar
+          </button>
+        </div>
+      )}
 
       {treino.status === 'realizado' && (
         <div className="mb-3.5">
