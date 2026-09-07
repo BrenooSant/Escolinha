@@ -19,8 +19,9 @@ const cliente = new QueryClient({
   },
 });
 
-/* HashRouter: o site é publicado no GitHub Pages, que não sabe
-   reescrever rotas para o index.html. */
+/* HashRouter. A Netlify sabe reescrever rotas, então dava para trocar por
+   BrowserRouter e ter URL limpa — mas o link de matrícula que os pais já
+   receberam é `#/matricula/CODIGO`, e trocar agora quebraria todos eles. */
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={cliente}>

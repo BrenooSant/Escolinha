@@ -5,7 +5,7 @@ agenda, mensalidades e cobrança dos responsáveis. Multi-tenant — cada
 professor cria a própria escolinha, e cada uma tem um **link público de
 matrícula** para os pais preencherem a ficha do filho.
 
-No ar em **https://brenoosant.github.io/Escolinha/**
+Publicado na **Netlify**.
 
 ```
 frontend/   React 19 + Vite + Tailwind 4 — só interface
@@ -81,15 +81,25 @@ falhar.
 
 ## Publicação
 
-O push na `main` dispara `.github/workflows/deploy.yml`. Antes do primeiro
-deploy, cadastre em **Settings → Secrets and variables → Actions**:
+Hospedado na Netlify. O `netlify.toml` na raiz já traz a build: base
+`frontend`, comando `npm run build`, publicação em `dist`.
+
+Antes do primeiro deploy, em **Site configuration → Environment
+variables**, cadastre:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
-E, no painel do Supabase (**Authentication → URL Configuration**), inclua
-`https://brenoosant.github.io/Escolinha/` nas *Redirect URLs* — sem isso a
-recuperação de senha não volta para o site.
+Isso não é opcional e falha calado: sem as chaves o build **passa**, e o
+site sobe mostrando a tela "Sem configuração" para todo mundo.
+
+E no painel do Supabase (**Authentication → URL Configuration**), inclua o
+endereço da Netlify nas *Redirect URLs* — sem isso a recuperação de senha
+não volta para o site.
+
+O `vite.config.js` usa `base: '/'`, que é o certo para servir na raiz do
+domínio. Se um dia o site for para uma subpasta, esse valor muda junto,
+senão todo asset sai com caminho errado e a página abre em branco.
 
 A `anon key` fica visível no bundle, como manda o desenho do Supabase: quem
 protege os dados é a RLS, não o segredo da chave.

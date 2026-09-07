@@ -1,0 +1,23 @@
+# Publicação na Netlify.
+#
+# O front mora em frontend/, então a build roda de lá. As chaves do
+# Supabase entram em Site configuration → Environment variables, não
+# aqui: VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY. Sem elas o build
+# passa mesmo assim e o site sobe mostrando "Sem configuração" — falha
+# silenciosa, então confira antes do primeiro deploy.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# O app usa HashRouter, então o servidor só é chamado na raiz e este
+# desvio quase não entra em ação. Fica para quem digitar um caminho
+# direto na barra: sem ele, a Netlify devolveria 404 em vez do app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
