@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { configurado } from '../lib/supabase.js';
 import * as apiAuth from '../api/auth.js';
 import { minhasEscolinhas } from '../api/escolinha.js';
@@ -15,8 +15,20 @@ export function ProvedorSessao({ children }) {
   const [escolinhas, setEscolinhas] = useState([]);
   const [escolinhaId, setEscolinhaId] = useState(() => localStorage.getItem(CHAVE_ESCOLINHA));
 
+  /* Duas cargas podem correr ao mesmo tempo. No cadastro é o que acontece
+     sempre: o signUp dispara o onAuthStateChange, que começa a ler as
+     escolinhas ANTES de `criar_escolinha` rodar e enxerga lista vazia; o
+     Login pede outra carga logo depois, já com a escolinha criada. Sem
+     ordenar as respostas, a primeira pode chegar por último e sobrescrever
+     a segunda — e o professor cai em "crie a sua escolinha" com a
+     escolinha dele já existindo no banco. */
+  const carga = useRef(0);
+
   const carregarContexto = useCallback(async () => {
+    const minha = ++carga.current;
     const [p, lista] = await Promise.all([apiAuth.meuPerfil(), minhasEscolinhas()]);
+    if (minha !== carga.current) return; // chegou atrasada: já há resposta mais nova
+
     setPerfil(p);
     setEscolinhas(lista);
 
