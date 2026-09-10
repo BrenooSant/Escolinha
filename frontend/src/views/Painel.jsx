@@ -8,6 +8,11 @@ import { brlCurto, corFreq, dataCurta, diaDaSemana, hora, mesExtenso } from '../
 import * as apiAlunos from '../api/alunos.js';
 import * as apiFinanceiro from '../api/financeiro.js';
 
+/* O painel responde a uma pergunta só: o que precisa de mim agora?
+   Daí a ordem — pendências, depois números, depois a semana. E cada coisa
+   aparece uma vez: o valor no tile, a ação no alerta ou na própria lista.
+   O caixa do mês vive em /financeiro; repeti-lo aqui só alongava a rolagem. */
+
 export default function Painel() {
   const navegar = useNavigate();
   const toast = useToast();
@@ -20,7 +25,6 @@ export default function Painel() {
   if (painel.isError) return <Erro erro={painel.error} aoTentar={painel.refetch} />;
 
   const r = painel.data;
-  const proximo = r.proximos_treinos?.[0];
 
   const gerarRelatorio = async () => {
     setGerando(true);
@@ -47,6 +51,28 @@ export default function Painel() {
       setGerando(false);
     }
   };
+
+  const sub = `${mesExtenso(r.competencia)}${escolinha?.cidade ? ' · ' + escolinha.cidade : ''}`;
+
+  /* Escolinha recém-criada: uma parede de zeros e cinco painéis vazios não
+     ensinam nada. Enquanto não há elenco, o painel tem um passo só. */
+  if (r.atletas === 0) {
+    return (
+      <>
+        <PageHead titulo="Painel" sub={sub} />
+        <Panel>
+          <Vazio
+            icone="⚽"
+            titulo="Sua escolinha está pronta"
+            texto="Matricule o primeiro atleta para começar a fazer chamada, cobrar mensalidade e acompanhar a frequência."
+          >
+            <Btn onClick={() => navegar('/alunos?novo=1')}>Matricular atleta</Btn>
+            <Btn variante="ghost" onClick={() => navegar('/ajustes')}>Criar turmas</Btn>
+          </Vazio>
+        </Panel>
+      </>
+    );
+  }
 
   /* Os avisos saem do próprio banco: só aparece o que de fato existe. */
   const alertas = [
@@ -85,35 +111,46 @@ export default function Painel() {
 
   const COR_DOT = { bad: 'bg-bad', warn: 'bg-warn', ok: 'bg-ok' };
 
-  const atalhos = [
-    proximo && {
-      ic: '✓',
-      titulo: 'Fazer a chamada',
-      nota: `${proximo.turma_nome} · ${dataCurta(proximo.data)} ${hora(proximo.hora)}`,
-      acao: () => navegar(`/chamada/${proximo.id}`),
-    },
-    { ic: '＋', titulo: 'Matricular atleta', nota: 'ficha completa em 1 minuto', acao: () => navegar('/alunos?novo=1') },
-    {
-      ic: '↗',
-      titulo: 'Cobrar atrasados',
-      nota: r.devedores > 0 ? `${r.devedores} responsáveis · ${brlCurto(r.atrasado)}` : 'ninguém em atraso 🎉',
-      acao: () => navegar('/cobrancas'),
-    },
-    { ic: '▤', titulo: 'Relatório do mês', nota: 'presença + caixa em PDF', acao: gerarRelatorio, ocupado: gerando },
-  ].filter(Boolean);
-
   return (
     <>
-      <PageHead
-        titulo="Painel"
-        sub={`${mesExtenso(r.competencia)}${escolinha?.cidade ? ' · ' + escolinha.cidade : ''}`}
-      >
-        {proximo && (
-          <Tag className="!py-1.5 !text-xs">
-            Próximo: {diaDaSemana(proximo.data)} {hora(proximo.hora)} — {proximo.turma_nome}
-          </Tag>
-        )}
+      <PageHead titulo="Painel" sub={sub}>
+        <Btn variante="ghost" onClick={gerarRelatorio} carregando={gerando}>
+          {gerando ? 'Gerando…' : 'Relatório do mês'}
+        </Btn>
+        <Btn onClick={() => navegar('/alunos?novo=1')}>Matricular atleta</Btn>
       </PageHead>
+
+      {/* Primeira coisa da tela: o que está esperando por você. */}
+      {alertas.length > 0 ? (
+        <Panel
+          titulo="Precisa da sua atenção"
+          extra={<Tag tom="bad">{alertas.length}</Tag>}
+          className="mb-4"
+        >
+          <ul>
+            {alertas.map((a) => (
+              <li key={a.titulo} className="flex items-start gap-3 border-b border-line px-4 py-3 last:border-b-0">
+                <span className={`mt-1.5 size-2 shrink-0 rounded-full ${COR_DOT[a.tom]}`} />
+                <div className="min-w-0 flex-1">
+                  <b className="block text-[13px] font-semibold">{a.titulo}</b>
+                  <small className="text-xs text-ink3">{a.nota}</small>
+                </div>
+                <button
+                  onClick={() => navegar(a.destino)}
+                  className="-mr-2 flex min-h-10 shrink-0 items-center self-center px-2 text-xs font-semibold whitespace-nowrap text-accent hover:underline"
+                >
+                  {a.cta} →
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : (
+        <p className="mb-4 flex items-center gap-2.5 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-ink2">
+          <span className="size-2 shrink-0 rounded-full bg-ok" />
+          Tudo em dia — nenhuma pendência de chamada, cobrança ou matrícula.
+        </p>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <Tile rotulo="Atletas ativos" valor={r.atletas} nota={r.atletas === 1 ? 'atleta matriculado' : 'atletas matriculados'} />
@@ -130,31 +167,19 @@ export default function Painel() {
         <Tile rotulo="Em atraso" valor={brlCurto(r.atrasado)} nota={`${r.devedores} responsáveis`} alerta />
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-        {atalhos.map((a) => (
-          <button
-            key={a.titulo}
-            onClick={a.acao}
-            disabled={a.ocupado}
-            className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 text-left transition hover:-translate-y-px hover:border-accent disabled:opacity-60 sm:p-3.5"
-          >
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accentsoft text-[15px] text-accentink">
-              {a.ic}
-            </span>
-            <span className="min-w-0">
-              <b className="block text-[13px] leading-tight font-semibold">{a.titulo}</b>
-              <small className="text-[11.5px] text-ink3">{a.ocupado ? 'gerando…' : a.nota}</small>
-            </span>
-          </button>
-        ))}
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+        {/* O próximo treino é a primeira linha daqui, em destaque — não
+            precisa de um card próprio repetindo turma, dia e hora. */}
         <Panel titulo="Próximos treinos" extra={<Btn variante="ghost" className="!min-h-8 !px-3 !text-xs" onClick={() => navegar('/agenda')}>Ver agenda</Btn>}>
           {r.proximos_treinos?.length ? (
             <ul>
-              {r.proximos_treinos.map((t) => (
-                <li key={t.id} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
+              {r.proximos_treinos.map((t, i) => (
+                <li
+                  key={t.id}
+                  className={`flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 ${
+                    i === 0 ? 'bg-accentsoft/50' : ''
+                  }`}
+                >
                   <div className="w-12 shrink-0 text-center">
                     <b className="tnum block font-display text-lg leading-none">{dataCurta(t.data).split('/')[0]}</b>
                     <small className="text-[10px] tracking-wide text-ink3 uppercase">{diaDaSemana(t.data).slice(0, 3)}</small>
@@ -168,12 +193,21 @@ export default function Painel() {
                       {hora(t.hora)} · {t.adversario ? `vs. ${t.adversario}` : t.local || 'local a definir'}
                     </small>
                   </div>
-                  <button
-                    onClick={() => navegar(`/chamada/${t.id}`)}
-                    className="-mr-2 shrink-0 px-2 text-xs font-semibold whitespace-nowrap text-accent hover:underline"
-                  >
-                    Chamada →
-                  </button>
+                  {i === 0 ? (
+                    <Btn
+                      onClick={() => navegar(`/chamada/${t.id}`)}
+                      className="!min-h-9 shrink-0 !px-3 !text-xs"
+                    >
+                      Fazer a chamada
+                    </Btn>
+                  ) : (
+                    <button
+                      onClick={() => navegar(`/chamada/${t.id}`)}
+                      className="-mr-2 shrink-0 px-2 text-xs font-semibold whitespace-nowrap text-accent hover:underline"
+                    >
+                      Chamada →
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -188,35 +222,6 @@ export default function Painel() {
           )}
         </Panel>
 
-        <Panel
-          titulo="Precisa da sua atenção"
-          extra={<Tag tom={alertas.length ? 'bad' : 'ok'}>{alertas.length}</Tag>}
-        >
-          {alertas.length ? (
-            <ul>
-              {alertas.map((a) => (
-                <li key={a.titulo} className="flex items-start gap-3 border-b border-line px-4 py-3 last:border-b-0">
-                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${COR_DOT[a.tom]}`} />
-                  <div className="min-w-0 flex-1">
-                    <b className="block text-[13px] font-semibold">{a.titulo}</b>
-                    <small className="text-xs text-ink3">{a.nota}</small>
-                  </div>
-                  <button
-                    onClick={() => navegar(a.destino)}
-                    className="-mr-2 flex min-h-10 shrink-0 items-center self-center px-2 text-xs font-semibold whitespace-nowrap text-accent hover:underline"
-                  >
-                    {a.cta} →
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <Vazio icone="👌" titulo="Tudo em dia" texto="Nenhuma pendência de chamada, cobrança ou matrícula." />
-          )}
-        </Panel>
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <Panel titulo="Frequência por turma" extra={<Tag>{turmas.data?.length ?? 0} turmas</Tag>} corpo>
           {turmas.isPending ? (
             <Esqueleto linhas={4} className="!p-0" />
@@ -241,44 +246,24 @@ export default function Painel() {
             <p className="py-4 text-center text-[13px] text-ink3">Nenhuma turma cadastrada ainda.</p>
           )}
         </Panel>
-
-        <Panel titulo="Aniversariantes do mês" corpo>
-          {r.aniversariantes?.length ? (
-            <div className="space-y-3.5">
-              {r.aniversariantes.map((a) => (
-                <div key={a.id} className="flex items-center gap-3">
-                  <Jersey num={a.numero ?? '·'} />
-                  <div className="min-w-0">
-                    <b className="block truncate text-[13px] font-semibold">{a.nome}</b>
-                    <small className="text-xs text-ink3">
-                      {a.turma_nome || 'sem turma'} · {a.idade} anos no dia {a.dia}
-                    </small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="py-4 text-center text-[13px] text-ink3">Ninguém faz aniversário este mês.</p>
-          )}
-        </Panel>
       </div>
 
-      <div className="mt-4">
-        <Panel titulo="Caixa do mês" corpo>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            {[
-              ['Entradas', brlCurto(r.entradas_mes), 'text-ok'],
-              ['Saídas', brlCurto(r.saidas_mes), ''],
-              ['Saldo', brlCurto(r.entradas_mes - r.saidas_mes), r.entradas_mes - r.saidas_mes < 0 ? 'text-bad' : ''],
-            ].map(([rot, val, cor]) => (
-              <div key={rot}>
-                <span className="text-[11px] font-semibold tracking-[0.1em] text-ink3 uppercase">{rot}</span>
-                <b className={`tnum block font-display text-xl font-semibold sm:text-2xl ${cor}`}>{val}</b>
+      {/* Faixa de encantamento, não de trabalho: só aparece quando tem alguém. */}
+      {r.aniversariantes?.length > 0 && (
+        <Panel titulo="Aniversariantes do mês" extra={<Tag>{r.aniversariantes.length}</Tag>} corpo className="mt-4">
+          <div className="no-bar -mx-1 flex gap-5 overflow-x-auto px-1">
+            {r.aniversariantes.map((a) => (
+              <div key={a.id} className="flex shrink-0 items-center gap-2.5">
+                <Jersey num={a.numero ?? '·'} tamanho="sm" />
+                <div>
+                  <b className="block text-[13px] font-semibold">{a.nome.split(' ')[0]}</b>
+                  <small className="text-xs text-ink3">dia {a.dia} · {a.idade} anos</small>
+                </div>
               </div>
             ))}
           </div>
         </Panel>
-      </div>
+      )}
     </>
   );
 }
