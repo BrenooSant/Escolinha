@@ -6,7 +6,7 @@ import { exec, rpc } from './cliente.js';
 export async function abrir(treinoId) {
   const treino = await exec(supabase.from('vw_treinos').select('*').eq('id', treinoId).single());
 
-  const [elenco, marcadas] = await Promise.all([
+  const [elenco, marcadas, atrasados] = await Promise.all([
     exec(
       supabase
         .from('vw_alunos')
@@ -16,7 +16,10 @@ export async function abrir(treinoId) {
         .order('nome')
     ),
     exec(supabase.from('presencas').select('aluno_id, marca, motivo').eq('treino_id', treinoId)),
+    // só os ids: o professor vê o aviso, não o valor nem a data
+    rpc('alunos_em_atraso', { p_escolinha: treino.escolinha_id }),
   ]);
+  const emAtraso = new Set(atrasados ?? []);
 
   const marcas = {};
   const motivos = {};
@@ -25,7 +28,12 @@ export async function abrir(treinoId) {
     if (p.motivo) motivos[p.aluno_id] = p.motivo;
   }
 
-  return { treino, elenco: elenco ?? [], marcas, motivos };
+  return {
+    treino,
+    elenco: (elenco ?? []).map((a) => ({ ...a, em_atraso: emAtraso.has(a.id) })),
+    marcas,
+    motivos,
+  };
 }
 
 /* marcas: { [alunoId]: 'P' | 'F' | 'J' }  ·  motivos: { [alunoId]: texto } */

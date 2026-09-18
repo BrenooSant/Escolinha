@@ -33,7 +33,7 @@ export default function Portal() {
           <span className="mb-3 block text-3xl" aria-hidden="true">🔒</span>
           <b className="block text-[15px]">Este link não está valendo</b>
           <p className="mx-auto mt-2 max-w-[38ch] text-[13px] text-ink3">
-            Ele pode ter sido trocado pela coordenação. Peça o link novo pelo WhatsApp da escolinha.
+            Ele pode ter sido trocado pela escolinha. Peça o link novo pelo WhatsApp da escolinha.
           </p>
         </div>
       </Moldura>
@@ -82,6 +82,20 @@ function Filho({ f, pix, onAvisar }) {
           </small>
         </div>
       </header>
+
+      {/* Vale a tolerância que a escolinha configurou: aparece só depois de
+          alguns dias vencida, não no dia seguinte ao vencimento. */}
+      {f.em_atraso && (
+        <p role="alert" className="flex items-start gap-2.5 border-b border-bad/30 bg-bad/10 px-4 py-3 text-[13px]">
+          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-bad" aria-hidden="true" />
+          <span>
+            <b className="block font-semibold text-bad">Pagamento em atraso</b>
+            <span className="text-ink2">
+              Tem mensalidade vencida. Se já pagou, toque em “Já paguei” abaixo para avisar a escolinha.
+            </span>
+          </span>
+        </p>
+      )}
 
       <div className="grid grid-cols-3 border-b border-line">
         {[

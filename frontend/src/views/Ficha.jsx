@@ -43,7 +43,7 @@ function useFotoUrl(caminho) {
 
 export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
   const toast = useToast();
-  const { escolinhaId } = useSessao();
+  const { escolinhaId, gestor } = useSessao();
   const [aba, setAba] = useState('ficha');
   const foto = useFotoUrl(aluno?.foto_path);
   const arquivo = useRef(null);
@@ -97,17 +97,23 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
     <>
       <Sheet aberto onFechar={onFechar} largura="max-w-xl" rotulo={`Ficha de ${aluno.nome}`}>
         <header className="flex items-center gap-3.5 border-b border-line px-4 py-4 sm:px-5">
-          <button
-            onClick={() => arquivo.current?.click()}
-            title="Trocar foto"
-            className="relative shrink-0 rounded-xl transition hover:opacity-80"
-          >
+          {gestor ? (
+            <>
+              <button
+                onClick={() => arquivo.current?.click()}
+                title="Trocar foto"
+                className="relative shrink-0 rounded-xl transition hover:opacity-80"
+              >
+                <Foto src={foto} num={aluno.numero} nome={aluno.nome} tamanho="lg" />
+                <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-full border border-surface bg-accent text-[10px] text-white">
+                  {enviandoFoto ? '…' : '📷'}
+                </span>
+              </button>
+              <input ref={arquivo} type="file" accept="image/*" onChange={enviarFoto} className="hidden" />
+            </>
+          ) : (
             <Foto src={foto} num={aluno.numero} nome={aluno.nome} tamanho="lg" />
-            <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-full border border-surface bg-accent text-[10px] text-white">
-              {enviandoFoto ? '…' : '📷'}
-            </span>
-          </button>
-          <input ref={arquivo} type="file" accept="image/*" onChange={enviarFoto} className="hidden" />
+          )}
 
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-lg sm:text-xl">{aluno.nome}</h3>
@@ -117,16 +123,20 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
                 .join(' · ')}
             </small>
           </div>
-          <Tag tom={aluno.ativo ? situacao.tom : 'neutro'}>
-            {aluno.ativo ? situacao.rotulo : 'Arquivado'}
-          </Tag>
+          {!aluno.ativo ? (
+            <Tag>Arquivado</Tag>
+          ) : (
+            gestor && <Tag tom={situacao.tom}>{situacao.rotulo}</Tag>
+          )}
         </header>
 
         <div className="grid grid-cols-3 border-b border-line">
           {[
             ['Frequência', aluno.frequencia != null ? `${aluno.frequencia}%` : '—', corFreq(aluno.frequencia)],
             ['Treinos', `${aluno.presencas}/${aluno.treinos}`, ''],
-            ['Mensalidade', brl(aluno.valor_centavos), ''],
+            gestor
+              ? ['Mensalidade', brl(aluno.valor_centavos), '']
+              : ['Faltas', aluno.faltas, aluno.faltas > 0 ? 'text-bad' : ''],
           ].map(([rot, val, cor], i) => (
             <div key={rot} className={`px-4 py-3 ${i < 2 ? 'border-r border-line' : ''}`}>
               <span className="text-[10px] font-semibold tracking-[0.09em] text-ink3 uppercase sm:text-[11px]">
@@ -140,7 +150,7 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
         </div>
 
         <div role="tablist" className="flex gap-0.5 border-b border-line bg-surface2/50 p-1">
-          {ABAS.map(([v, rot]) => (
+          {ABAS.filter(([v]) => gestor || v !== 'mensalidades').map(([v, rot]) => (
             <button
               key={v}
               role="tab"
@@ -166,9 +176,10 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
               onArquivar={() => setConfirmarArquivo(true)}
               onReativar={() => reativar.mutate()}
               reativando={reativar.isPending}
+              gestor={gestor}
             />
           )}
-          {aba === 'mensalidades' && <AbaMensalidades aluno={aluno} />}
+          {gestor && aba === 'mensalidades' && <AbaMensalidades aluno={aluno} />}
           {aba === 'avaliacoes' && <AbaAvaliacoes aluno={aluno} onAvaliar={setAvaliando} />}
         </div>
 
@@ -186,11 +197,11 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
                   Chamar no WhatsApp
                 </Btn>
               )}
-              {aluno.ativo && situacao.dias > 0 ? (
+              {gestor && (aluno.ativo && situacao.dias > 0 ? (
                 <Btn onClick={() => { onFechar(); onCobrar?.(aluno); }}>Enviar cobrança</Btn>
               ) : (
                 <Btn onClick={() => { onFechar(); onEditar?.(aluno); }}>Editar ficha</Btn>
-              )}
+              ))}
             </>
           )}
         </SheetFoot>
@@ -217,7 +228,7 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
 }
 
 /* ---------------------------------------------------------------- */
-function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando }) {
+function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando, gestor }) {
   const historico = useHistoricoAluno(aluno.id);
 
   return (
@@ -257,18 +268,21 @@ function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando })
           <span className="tnum">{aluno.responsavel_telefone || '—'}</span>
         </Linha>
         {aluno.responsavel_email && <Linha termo="E-mail">{aluno.responsavel_email}</Linha>}
-        <Linha termo="Vencimento">
-          Todo dia {aluno.dia_vencimento}
-          {situacao.dias > 0 && <Tag tom="bad" className="ml-2">{situacao.dias} dias de atraso</Tag>}
-        </Linha>
+        {gestor && (
+          <Linha termo="Vencimento">
+            Todo dia {aluno.dia_vencimento}
+            {situacao.dias > 0 && <Tag tom="bad" className="ml-2">{situacao.dias} dias de atraso</Tag>}
+          </Linha>
+        )}
         <Linha termo="Matrícula">{dataBR(aluno.matriculado_em)}</Linha>
         <Linha termo="Uso de imagem">{aluno.autoriza_imagem ? 'Autorizado' : 'Não autorizado'}</Linha>
         <Linha termo="Observações">{aluno.observacoes || '—'}</Linha>
       </dl>
 
-      <LinkDoResponsavel aluno={aluno} />
+      {/* o portal mostra as mensalidades: o link é coisa do gestor */}
+      {gestor && <LinkDoResponsavel aluno={aluno} />}
 
-      {aluno.ativo ? (
+      {!gestor ? null : aluno.ativo ? (
         <button onClick={onArquivar} className="mt-6 text-xs font-semibold text-bad hover:underline">
           Arquivar atleta
         </button>
