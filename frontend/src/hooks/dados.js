@@ -196,6 +196,15 @@ export function useAcao(fn, { sucesso } = {}) {
 }
 
 /* Regras de cobrança e planos: só o gestor pede, então só roda para ele. */
+export function useContas() {
+  const { escolinhaId, gestor } = useSessao();
+  return useQuery({
+    queryKey: ['contas', escolinhaId],
+    queryFn: () => apiFinanceiro.contas(escolinhaId),
+    ...ativo(escolinhaId && gestor),
+  });
+}
+
 export function useConfigCobranca() {
   const { escolinhaId, gestor } = useSessao();
   return useQuery({

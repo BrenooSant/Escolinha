@@ -57,11 +57,29 @@ export async function registrarLembrete(escolinhaId, mensalidadeId, mensagem) {
   );
 }
 
+/* O caixa: só o que foi pago ou recebido. Conta pendente mora em contas(). */
 export async function lancamentos(escolinhaId, { de, ate, limite = 200 } = {}) {
-  let q = supabase.from('lancamentos').select('*').eq('escolinha_id', escolinhaId);
+  let q = supabase.from('lancamentos').select('*').eq('escolinha_id', escolinhaId).eq('pago', true);
   if (de) q = q.gte('data', de);
   if (ate) q = q.lte('data', ate);
   return exec(q.order('data', { ascending: false }).limit(limite));
+}
+
+/* Contas a pagar e a receber ainda pendentes, da que vence antes. */
+export async function contas(escolinhaId) {
+  return exec(
+    supabase
+      .from('lancamentos')
+      .select('*')
+      .eq('escolinha_id', escolinhaId)
+      .eq('pago', false)
+      .order('vencimento')
+  );
+}
+
+/* Devolve o id da próxima, quando a conta é recorrente. */
+export async function pagarConta(id, { data = null, valor = null } = {}) {
+  return rpc('pagar_conta', { p_lancamento: id, p_data: data, p_valor: valor });
 }
 
 export async function criarLancamento(escolinhaId, dados) {

@@ -4,11 +4,11 @@ import {
   SheetFoot, Tag, Tile, Vazio, useToast,
 } from '../ui.jsx';
 import { PageHead } from '../Shell.jsx';
-import { useAcao, useLancamentos, useMensalidades, usePainel, useTurmas } from '../hooks/dados.js';
+import { useAcao, useContas, useLancamentos, useMensalidades, usePainel, useTurmas } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import * as apiFinanceiro from '../api/financeiro.js';
 import {
-  brl, brlCurto, dataCurta, deCentavos, hojeISO, mesCurto, mesExtenso, paraCentavos,
+  brl, brlCurto, dataBR, dataCurta, deCentavos, hojeISO, mesCurto, mesExtenso, paraCentavos, paraData,
 } from '../lib/format.js';
 import { exportarCSV } from '../lib/csv.js';
 
@@ -241,6 +241,8 @@ export default function Financeiro() {
         />
       </div>
 
+      <Contas onEditar={setEditando} onApagar={setApagando} onNova={() => setNovo(true)} />
+
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <Panel titulo="Entradas x saídas" extra={<Tag>6 meses até {mesCurto(periodo.ate)}</Tag>} corpo>
           {daSerie.isPending ? (
@@ -299,7 +301,7 @@ export default function Financeiro() {
                     <button
                       onClick={() => setApagando(l)}
                       title="Apagar lançamento"
-                      className="shrink-0 px-1 text-ink3 opacity-0 transition group-hover:opacity-100 hover:text-bad"
+                      className="shrink-0 px-1 text-ink3 transition hover:text-bad lg:opacity-0 lg:group-hover:opacity-100"
                     >
                       ✕
                     </button>
@@ -392,6 +394,7 @@ function FormLancamento({ aberto, lancamento, onFechar }) {
   const toast = useToast();
   const { escolinhaId } = useSessao();
   const [tipo, setTipo] = useState(lancamento?.tipo ?? 'saida');
+  const [pago, setPago] = useState(lancamento?.pago ?? true);
   const [erro, setErro] = useState(null);
   const editando = Boolean(lancamento);
 
@@ -410,13 +413,18 @@ function FormLancamento({ aberto, lancamento, onFechar }) {
     const centavos = paraCentavos(f.get('valor'));
     if (centavos <= 0) return setErro('Informe um valor maior que zero.');
 
+    // pendente: a data do caixa acompanha o vencimento até ser paga
+    const vencimento = pago ? null : f.get('vencimento');
     salvar.mutate(
       {
         descricao: f.get('descricao').trim(),
         tipo,
         valor_centavos: centavos,
-        data: f.get('data'),
+        data: pago ? f.get('data') : vencimento,
         categoria: f.get('categoria'),
+        pago,
+        vencimento,
+        recorrente: !pago && f.get('recorrente') === 'on',
       },
       { onError: (err) => setErro(err.message) }
     );
@@ -427,7 +435,8 @@ function FormLancamento({ aberto, lancamento, onFechar }) {
       <header className="px-4 pt-4 sm:px-5 sm:pt-5">
         <h3 className="text-lg sm:text-xl">{editando ? 'Editar lançamento' : 'Novo lançamento'}</h3>
         <p className="mt-1 text-[13px] text-ink3">
-          As mensalidades pagas entram sozinhas — aqui vão as outras contas.
+          As mensalidades pagas entram sozinhas — aqui vão as outras contas. Deixe como pendente o que
+          ainda vai vencer.
         </p>
       </header>
 
@@ -460,9 +469,35 @@ function FormLancamento({ aberto, lancamento, onFechar }) {
               placeholder="900,00"
             />
           </Field>
-          <Field label="Data">
-            <Input type="date" name="data" required defaultValue={lancamento?.data ?? hojeISO()} />
-          </Field>
+          <label className="col-span-full flex items-center gap-2.5 text-[13px] text-ink2">
+            <input
+              type="checkbox"
+              checked={pago}
+              onChange={(e) => setPago(e.target.checked)}
+              className="size-4 accent-accent"
+            />
+            {tipo === 'saida' ? 'Já foi pago' : 'Já foi recebido'}
+          </label>
+          {pago ? (
+            <Field label={tipo === 'saida' ? 'Pago em' : 'Recebido em'}>
+              <Input type="date" name="data" required defaultValue={lancamento?.pago ? lancamento.data : hojeISO()} />
+            </Field>
+          ) : (
+            <>
+              <Field label="Vence em">
+                <Input type="date" name="vencimento" required defaultValue={lancamento?.vencimento ?? hojeISO()} />
+              </Field>
+              <label className="col-span-full flex items-center gap-2.5 text-[13px] text-ink2">
+                <input
+                  type="checkbox"
+                  name="recorrente"
+                  defaultChecked={lancamento?.recorrente ?? false}
+                  className="size-4 accent-accent"
+                />
+                Repete todo mês — ao pagar, a do mês seguinte já fica lançada
+              </label>
+            </>
+          )}
           <Field label="Categoria" className="sm:col-span-2">
             <Select name="categoria" defaultValue={lancamento?.categoria ?? (tipo === 'saida' ? 'Estrutura' : 'Uniforme')}>
               {(tipo === 'saida' ? CATEGORIAS_SAIDA : CATEGORIAS_ENTRADA).map((c) => (
@@ -479,5 +514,96 @@ function FormLancamento({ aberto, lancamento, onFechar }) {
         </SheetFoot>
       </form>
     </Sheet>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Contas a pagar e a receber: o que foi combinado e ainda não saiu nem
+   entrou. Fica fora do caixa até o gestor marcar como pago. */
+function Contas({ onEditar, onApagar, onNova }) {
+  const toast = useToast();
+  const contas = useContas();
+  const hoje = hojeISO();
+
+  const pagar = useAcao((c) => apiFinanceiro.pagarConta(c.id), {
+    sucesso: (proxima, c) =>
+      toast(
+        `${c.tipo === 'saida' ? 'Pagamento' : 'Recebimento'} registrado no caixa` +
+          (proxima ? ' — a do mês que vem já está lançada' : '')
+      ),
+  });
+
+  if (contas.isPending) return <Panel titulo="Contas a pagar e receber" className="mb-4"><Esqueleto linhas={2} /></Panel>;
+  const lista = contas.data ?? [];
+  const aPagar = lista.filter((c) => c.tipo === 'saida').reduce((t, c) => t + c.valor_centavos, 0);
+  const aReceber = lista.filter((c) => c.tipo === 'entrada').reduce((t, c) => t + c.valor_centavos, 0);
+
+  return (
+    <Panel
+      titulo="Contas a pagar e receber"
+      className="mb-4"
+      extra={<Btn variante="ghost" className="!min-h-8 !px-3 !text-xs" onClick={onNova}>+ Conta</Btn>}
+    >
+      {!lista.length ? (
+        <p className="px-4 py-3.5 text-[13px] text-ink3">
+          Nada pendente. Lance o aluguel do campo, o salário do auxiliar ou um patrocínio que vai entrar
+          como pendente, com o vencimento — o painel avisa quando vencer.
+        </p>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-x-5 gap-y-1 border-b border-line px-4 py-2.5 text-xs text-ink3">
+            <span>A pagar <b className="tnum text-ink">{brl(aPagar)}</b></span>
+            <span>A receber <b className="tnum text-ok">{brl(aReceber)}</b></span>
+          </div>
+          <ul>
+            {lista.map((c) => {
+              const dias = Math.round((paraData(c.vencimento) - paraData(hoje)) / 864e5);
+              return (
+                <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 last:border-b-0">
+                  <button onClick={() => onEditar(c)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <span className="min-w-0 flex-1">
+                      <b className="block truncate text-[13px] font-semibold">{c.descricao}</b>
+                      <small className="text-xs text-ink3">
+                        vence {dataBR(c.vencimento)}
+                        {c.recorrente ? ' · todo mês' : ''}
+                        {c.categoria ? ` · ${c.categoria}` : ''}
+                      </small>
+                    </span>
+                    <span className={`tnum shrink-0 text-[13px] font-semibold ${c.tipo === 'entrada' ? 'text-ok' : 'text-ink2'}`}>
+                      {c.tipo === 'entrada' ? '+ ' : '− '}{brl(c.valor_centavos)}
+                    </span>
+                  </button>
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
+                    {dias < 0 ? (
+                      <Tag tom="bad">venceu há {-dias} dia{dias < -1 ? 's' : ''}</Tag>
+                    ) : dias === 0 ? (
+                      <Tag tom="warn">vence hoje</Tag>
+                    ) : (
+                      <Tag>em {dias} dia{dias > 1 ? 's' : ''}</Tag>
+                    )}
+                    <span className="flex-1" />
+                    <button
+                      onClick={() => onApagar(c)}
+                      className="px-1 text-ink3 transition hover:text-bad"
+                      aria-label={`Apagar ${c.descricao}`}
+                    >
+                      ✕
+                    </button>
+                    <Btn
+                      variante="ghost"
+                      className="!min-h-9 !text-xs"
+                      onClick={() => pagar.mutate(c)}
+                      carregando={pagar.isPending && pagar.variables?.id === c.id}
+                    >
+                      {c.tipo === 'saida' ? 'Paguei' : 'Recebi'}
+                    </Btn>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </Panel>
   );
 }
