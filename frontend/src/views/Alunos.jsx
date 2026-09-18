@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Btn, Chips, Erro, Esqueleto, Foto, Panel, Tag, Vazio, useToast } from '../ui.jsx';
 import { PageHead } from '../Shell.jsx';
 import { useAlunos, useTurmas } from '../hooks/dados.js';
+import { useSessao } from '../estado/Sessao.jsx';
 import { situacaoMensalidade } from '../lib/constantes.js';
 import { brl, corFreq, dataBR, idade } from '../lib/format.js';
 import { exportarCSV } from '../lib/csv.js';
@@ -12,6 +13,7 @@ import ModalCobranca, { cobrancaDeAluno } from './ModalCobranca.jsx';
 
 export default function Alunos() {
   const toast = useToast();
+  const { gestor } = useSessao();
   const [params, setParams] = useSearchParams();
   const [termo, setTermo] = useState('');
   const [filtro, setFiltro] = useState('Todas');
@@ -27,10 +29,10 @@ export default function Alunos() {
   /* O painel manda para cá com ?novo=1 no atalho "Matricular atleta". */
   useEffect(() => {
     if (params.get('novo')) {
-      setNovo(true);
+      if (gestor) setNovo(true);
       setParams({}, { replace: true });
     }
-  }, [params, setParams]);
+  }, [params, setParams, gestor]);
 
   const opcoes = useMemo(
     () => ['Todas', ...(turmas.data ?? []).map((t) => t.nome)],
@@ -52,15 +54,19 @@ export default function Alunos() {
   const ficha = useMemo(() => lista.find((a) => a.id === fichaId) ?? (alunos.data ?? []).find((a) => a.id === fichaId), [lista, alunos.data, fichaId]);
 
   const exportar = () => {
+    // o professor exporta a lista sem as colunas de dinheiro
+    const colunas = ['Nome', 'Número', 'Turma', 'Posição', 'Nascimento', 'Responsável', 'Parentesco', 'WhatsApp', 'Frequência'];
     exportarCSV(
       `alunos-${new Date().toISOString().slice(0, 10)}.csv`,
-      ['Nome', 'Número', 'Turma', 'Posição', 'Nascimento', 'Responsável', 'Parentesco', 'WhatsApp', 'Frequência', 'Mensalidade', 'Situação'],
-      lista.map((a) => [
-        a.nome, a.numero, a.turma_nome, a.posicao, dataBR(a.nascimento),
-        a.responsavel_nome, a.responsavel_parentesco, a.responsavel_telefone,
-        a.frequencia != null ? `${a.frequencia}%` : '',
-        brl(a.valor_centavos), situacaoMensalidade(a).rotulo,
-      ])
+      gestor ? [...colunas, 'Mensalidade', 'Situação'] : colunas,
+      lista.map((a) => {
+        const linha = [
+          a.nome, a.numero, a.turma_nome, a.posicao, dataBR(a.nascimento),
+          a.responsavel_nome, a.responsavel_parentesco, a.responsavel_telefone,
+          a.frequencia != null ? `${a.frequencia}%` : '',
+        ];
+        return gestor ? [...linha, brl(a.valor_centavos), situacaoMensalidade(a).rotulo] : linha;
+      })
     );
     toast(`${lista.length} atletas exportados`);
   };
@@ -76,7 +82,7 @@ export default function Alunos() {
         }
       >
         <Btn variante="ghost" onClick={exportar} disabled={!lista.length}>Exportar CSV</Btn>
-        <Btn onClick={() => setNovo(true)}>+ Novo aluno</Btn>
+        {gestor && <Btn onClick={() => setNovo(true)}>+ Novo aluno</Btn>}
       </PageHead>
 
       <Panel
@@ -119,7 +125,7 @@ export default function Alunos() {
                 : 'Matricule pelo painel ou mande o link público para os responsáveis preencherem a ficha.'
             }
           >
-            {!termo && filtro === 'Todas' && <Btn onClick={() => setNovo(true)}>+ Novo aluno</Btn>}
+            {gestor && !termo && filtro === 'Todas' && <Btn onClick={() => setNovo(true)}>+ Novo aluno</Btn>}
           </Vazio>
         ) : (
           <>
@@ -140,7 +146,7 @@ export default function Alunos() {
                           {[a.turma_nome, a.posicao].filter(Boolean).join(' · ') || 'sem turma'}
                         </small>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <Tag tom={s.tom}>{s.rotulo}</Tag>
+                          {gestor && <Tag tom={s.tom}>{s.rotulo}</Tag>}
                           {a.frequencia != null && (
                             <span className={`tnum text-[11px] font-semibold ${corFreq(a.frequencia)}`}>
                               {a.frequencia}% de presença
@@ -148,10 +154,12 @@ export default function Alunos() {
                           )}
                         </div>
                       </div>
-                      <div className="shrink-0 text-right">
-                        <b className="tnum block text-[13px]">{brl(a.valor_centavos)}</b>
-                        <small className="text-[11px] text-ink3">por mês</small>
-                      </div>
+                      {gestor && (
+                        <div className="shrink-0 text-right">
+                          <b className="tnum block text-[13px]">{brl(a.valor_centavos)}</b>
+                          <small className="text-[11px] text-ink3">por mês</small>
+                        </div>
+                      )}
                     </button>
                   </li>
                 );
@@ -168,7 +176,7 @@ export default function Alunos() {
                   <th>Responsável</th>
                   <th>Contato</th>
                   <th className="!text-right">Frequência</th>
-                  <th className="!text-right">Mensalidade</th>
+                  {gestor && <th className="!text-right">Mensalidade</th>}
                 </tr>
               </thead>
               <tbody>
@@ -207,11 +215,13 @@ export default function Alunos() {
                         <br />
                         <small className="text-ink3">{a.presencas}/{a.treinos} treinos</small>
                       </td>
-                      <td className="text-right">
-                        <b className="tnum">{brl(a.valor_centavos)}</b>
-                        <br />
-                        <Tag tom={s.tom}>{s.rotulo}</Tag>
-                      </td>
+                      {gestor && (
+                        <td className="text-right">
+                          <b className="tnum">{brl(a.valor_centavos)}</b>
+                          <br />
+                          <Tag tom={s.tom}>{s.rotulo}</Tag>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

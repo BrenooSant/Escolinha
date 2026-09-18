@@ -1,11 +1,17 @@
 import { supabase } from '../lib/supabase.js';
 import { exec, rpc } from './cliente.js';
 
+/* A RLS deixa ver todos os membros das escolinhas em que você está —
+   sem o filtro pelo seu id, a linha do gestor vinha junto e o professor
+   herdava o papel dele na tela. */
 export async function minhasEscolinhas() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return [];
   const linhas = await exec(
     supabase
       .from('membros')
-      .select('papel, escolinha:escolinhas(id, nome, cidade, local_padrao, chave_pix, dia_vencimento, codigo_matricula, matriculas_abertas)')
+      .select('papel, escolinha:escolinhas(id, nome, cidade, local_padrao, chave_pix, dia_vencimento, tolerancia_atraso, codigo_matricula, matriculas_abertas)')
+      .eq('perfil_id', session.user.id)
       .order('criado_em', { ascending: true })
   );
   return (linhas ?? [])
@@ -22,7 +28,7 @@ export async function salvarEscolinha(id, dados) {
 export async function apagar(id) {
   const linhas = await exec(supabase.from('escolinhas').delete().eq('id', id).select('id'));
   if (!linhas?.length) {
-    throw new Error('Só a coordenação pode apagar a escolinha.');
+    throw new Error('Só o gestor pode apagar a escolinha.');
   }
   return linhas[0];
 }

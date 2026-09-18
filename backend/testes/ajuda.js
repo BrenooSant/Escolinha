@@ -128,7 +128,8 @@ export async function novoResponsavel(sb, { escolinhaId, nome = 'Responsável de
   const { data, error } = await sb
     .from('responsaveis')
     .insert({ escolinha_id: escolinhaId, nome, parentesco: 'Mãe', telefone })
-    .select()
+    // explícito: `token` não sai no select direto (ver token_responsavel)
+    .select('id, escolinha_id, nome, parentesco, telefone, email')
     .single();
   if (error) throw new Error('novoResponsavel: ' + error.message);
   return data;

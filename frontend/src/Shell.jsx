@@ -37,16 +37,20 @@ const MENU = [
   { para: '/agenda', icone: 'agenda', rotulo: 'Agenda' },
   { para: '/alunos', icone: 'alunos', rotulo: 'Alunos' },
   { para: '/chamada', icone: 'chamada', rotulo: 'Chamada' },
-  { para: '/financeiro', icone: 'financeiro', rotulo: 'Financeiro' },
-  { para: '/cobrancas', icone: 'cobrancas', rotulo: 'Cobranças', selo: 'devedores' },
-  { para: '/matriculas', icone: 'matriculas', rotulo: 'Matrículas', selo: 'pre_matriculas' },
-  { para: '/relatorios', icone: 'relatorios', rotulo: 'Relatórios' },
+  { para: '/financeiro', icone: 'financeiro', rotulo: 'Financeiro', gestor: true },
+  { para: '/cobrancas', icone: 'cobrancas', rotulo: 'Cobranças', selo: 'devedores', gestor: true },
+  { para: '/matriculas', icone: 'matriculas', rotulo: 'Matrículas', selo: 'pre_matriculas', gestor: true },
+  { para: '/relatorios', icone: 'relatorios', rotulo: 'Relatórios', gestor: true },
   { para: '/ajustes', icone: 'ajustes', rotulo: 'Ajustes' },
 ];
 
-/* No celular: 4 abas fixas + "Mais". No desktop: barra lateral com tudo. */
-const ABAS = ['/', '/chamada', '/alunos', '/financeiro'];
-const NO_MENU = MENU.filter((m) => !ABAS.includes(m.para));
+/* Rotas que o professor não abre — o App usa para redirecionar. */
+export const SO_GESTOR = MENU.filter((m) => m.gestor).map((m) => m.para);
+
+/* No celular: 4 abas fixas + "Mais". No desktop: barra lateral com tudo.
+   O professor não tem Financeiro, então a Agenda sobe para as abas. */
+const ABAS_GESTOR = ['/', '/chamada', '/alunos', '/financeiro'];
+const ABAS_PROFESSOR = ['/', '/chamada', '/alunos', '/agenda'];
 
 export default function Shell({ children }) {
   const [menu, setMenu] = useState(false);
@@ -54,8 +58,12 @@ export default function Shell({ children }) {
   const [novaEscolinha, setNovaEscolinha] = useState(false);
   const navegar = useNavigate();
   const { pathname } = useLocation();
-  const { perfil, escolinha, escolinhas, trocarEscolinha, sair } = useSessao();
+  const { perfil, escolinha, escolinhas, gestor, trocarEscolinha, sair } = useSessao();
   const { data: resumo } = usePainel();
+
+  const menuVisivel = gestor ? MENU : MENU.filter((m) => !m.gestor);
+  const ABAS = gestor ? ABAS_GESTOR : ABAS_PROFESSOR;
+  const NO_MENU = menuVisivel.filter((m) => !ABAS.includes(m.para));
 
   const selos = {
     devedores: resumo?.devedores ?? 0,
@@ -98,7 +106,7 @@ export default function Shell({ children }) {
         </button>
 
         <nav className="flex flex-col gap-0.5">
-          {MENU.map((m) => (
+          {menuVisivel.map((m) => (
             <NavLink
               key={m.para}
               to={m.para}
@@ -124,7 +132,7 @@ export default function Shell({ children }) {
           <div className="min-w-0">
             <b className="block truncate text-[13px]">{perfil?.nome || 'Professor'}</b>
             <small className="text-[11px] text-ink3">
-              {escolinha?.papel === 'dono' ? 'Coordenação' : 'Professor'}
+              {gestor ? 'Gestor' : 'Professor'}
             </small>
           </div>
           <button onClick={sair} title="Sair"

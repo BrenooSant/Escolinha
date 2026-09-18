@@ -31,8 +31,8 @@ describe.skipIf(!configurado)('portal do responsável', () => {
     });
     await sb.rpc('gerar_mensalidades', { p_escolinha: esc.id, p_competencia: null });
 
-    const { data } = await sb.from('responsaveis').select('token').eq('id', resp.id).single();
-    token = data.token;
+    const { data } = await sb.rpc('token_responsavel', { p_responsavel: resp.id });
+    token = data;
   });
 
   afterAll(async () => { await apagarEscolinha(sb, esc?.id); });
@@ -78,10 +78,10 @@ describe.skipIf(!configurado)('portal do responsável', () => {
     const intruso = await novoResponsavel(sb, {
       escolinhaId: esc.id, nome: 'Outro Pai', telefone: '(62) 90000-0002',
     });
-    const { data: t } = await sb.from('responsaveis').select('token').eq('id', intruso.id).single();
+    const { data: t } = await sb.rpc('token_responsavel', { p_responsavel: intruso.id });
 
     const { error } = await anon.rpc('avisar_pagamento', {
-      p_token: t.token, p_mensalidade: mensalidade.id,
+      p_token: t, p_mensalidade: mensalidade.id,
     });
     expect(error).toBeTruthy();
   });
@@ -116,9 +116,9 @@ describe.skipIf(!configurado)('portal do responsável', () => {
 
   it('atleta arquivado some do portal', async () => {
     await sb.from('alunos').update({ ativo: false }).eq('id', aluno.id);
-    const { data: t } = await sb.from('responsaveis').select('token').eq('id', resp.id).single();
+    const { data: t } = await sb.rpc('token_responsavel', { p_responsavel: resp.id });
 
-    const { data } = await anon.rpc('portal_responsavel', { p_token: t.token });
+    const { data } = await anon.rpc('portal_responsavel', { p_token: t });
     expect(data.filhos.map((f) => f.nome)).toEqual(['Irmão Duarte']);
   });
 });

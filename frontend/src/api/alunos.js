@@ -67,10 +67,18 @@ export async function apagar(id) {
   return exec(supabase.from('alunos').delete().eq('id', id));
 }
 
-/* Traz o token junto: é com ele que se monta o link do portal. */
+/* Colunas explícitas: o banco não entrega `token` no select direto — ele
+   abre o portal, que mostra as mensalidades. Quem monta o link é o
+   gestor, e o token vem de uma função que só responde a ele. */
+const COLUNAS_RESPONSAVEL = 'id, escolinha_id, nome, parentesco, telefone, email, criado_em';
+
 export async function responsavel(id) {
   if (!id) return null;
-  return exec(supabase.from('responsaveis').select('*').eq('id', id).maybeSingle());
+  const [dados, token] = await Promise.all([
+    exec(supabase.from('responsaveis').select(COLUNAS_RESPONSAVEL).eq('id', id).maybeSingle()),
+    rpc('token_responsavel', { p_responsavel: id }),
+  ]);
+  return dados && { ...dados, token };
 }
 
 export async function trocarTokenResponsavel(id) {
@@ -79,7 +87,7 @@ export async function trocarTokenResponsavel(id) {
 
 export async function listarResponsaveis(escolinhaId) {
   return exec(
-    supabase.from('responsaveis').select('*').eq('escolinha_id', escolinhaId).order('nome')
+    supabase.from('responsaveis').select(COLUNAS_RESPONSAVEL).eq('escolinha_id', escolinhaId).order('nome')
   );
 }
 

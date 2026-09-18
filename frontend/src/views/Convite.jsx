@@ -81,7 +81,7 @@ export default function Convite() {
       <h1 className="mt-3 text-2xl">{convite.escolinha}</h1>
       <p className="mt-2 text-[13px] text-ink3">
         Você foi convidado para entrar como{' '}
-        <b>{convite.papel === 'dono' ? 'coordenação' : 'professor'}</b>
+        <b>{convite.papel === 'dono' ? 'gestor' : 'professor'}</b>
         {convite.cidade ? ` · ${convite.cidade}` : ''}. Aceitando, você passa a ver os atletas,
         fazer chamada e acompanhar o financeiro desta escolinha.
       </p>

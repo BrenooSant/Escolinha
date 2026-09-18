@@ -16,7 +16,7 @@ import * as apiFinanceiro from '../api/financeiro.js';
 export default function Painel() {
   const navegar = useNavigate();
   const toast = useToast();
-  const { escolinha, escolinhaId } = useSessao();
+  const { escolinha, escolinhaId, gestor } = useSessao();
   const painel = usePainel();
   const turmas = useTurmas();
   const [gerando, setGerando] = useState(false);
@@ -64,10 +64,18 @@ export default function Painel() {
           <Vazio
             icone="⚽"
             titulo="Sua escolinha está pronta"
-            texto="Matricule o primeiro atleta para começar a fazer chamada, cobrar mensalidade e acompanhar a frequência."
+            texto={
+              gestor
+                ? 'Matricule o primeiro atleta para começar a fazer chamada, cobrar mensalidade e acompanhar a frequência.'
+                : 'Assim que o gestor matricular os atletas, eles aparecem aqui e na chamada.'
+            }
           >
-            <Btn onClick={() => navegar('/alunos?novo=1')}>Matricular atleta</Btn>
-            <Btn variante="ghost" onClick={() => navegar('/ajustes')}>Criar turmas</Btn>
+            {gestor && (
+              <>
+                <Btn onClick={() => navegar('/alunos?novo=1')}>Matricular atleta</Btn>
+                <Btn variante="ghost" onClick={() => navegar('/ajustes')}>Criar turmas</Btn>
+              </>
+            )}
           </Vazio>
         </Panel>
       </>
@@ -114,10 +122,14 @@ export default function Painel() {
   return (
     <>
       <PageHead titulo="Painel" sub={sub}>
-        <Btn variante="ghost" onClick={gerarRelatorio} carregando={gerando}>
-          {gerando ? 'Gerando…' : 'Relatório do mês'}
-        </Btn>
-        <Btn onClick={() => navegar('/alunos?novo=1')}>Matricular atleta</Btn>
+        {gestor && (
+          <>
+            <Btn variante="ghost" onClick={gerarRelatorio} carregando={gerando}>
+              {gerando ? 'Gerando…' : 'Relatório do mês'}
+            </Btn>
+            <Btn onClick={() => navegar('/alunos?novo=1')}>Matricular atleta</Btn>
+          </>
+        )}
       </PageHead>
 
       {/* Primeira coisa da tela: o que está esperando por você. */}
@@ -148,23 +160,29 @@ export default function Painel() {
       ) : (
         <p className="mb-4 flex items-center gap-2.5 rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-ink2">
           <span className="size-2 shrink-0 rounded-full bg-ok" />
-          Tudo em dia — nenhuma pendência de chamada, cobrança ou matrícula.
+          {gestor
+            ? 'Tudo em dia — nenhuma pendência de chamada, cobrança ou matrícula.'
+            : 'Tudo em dia — nenhuma chamada pendente.'}
         </p>
       )}
 
-      <div className="mb-4 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+      <div className={`mb-4 grid grid-cols-2 gap-2.5 sm:gap-3 ${gestor ? 'lg:grid-cols-4' : ''}`}>
         <Tile rotulo="Atletas ativos" valor={r.atletas} nota={r.atletas === 1 ? 'atleta matriculado' : 'atletas matriculados'} />
         <Tile
           rotulo="Presença média"
           valor={r.frequencia_media != null ? `${r.frequencia_media}%` : '—'}
           nota="desde a matrícula de cada um"
         />
-        <Tile
-          rotulo="Recebido no mês"
-          valor={brlCurto(r.recebido)}
-          nota={`${r.pagas} de ${r.atletas} mensalidades`}
-        />
-        <Tile rotulo="Em atraso" valor={brlCurto(r.atrasado)} nota={`${r.devedores} responsáveis`} alerta />
+        {gestor && (
+          <>
+            <Tile
+              rotulo="Recebido no mês"
+              valor={brlCurto(r.recebido)}
+              nota={`${r.pagas} de ${r.atletas} mensalidades`}
+            />
+            <Tile rotulo="Em atraso" valor={brlCurto(r.atrasado)} nota={`${r.devedores} responsáveis`} alerta />
+          </>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">

@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { configurado } from './lib/supabase.js';
 import { useSessao } from './estado/Sessao.jsx';
-import Shell from './Shell.jsx';
+import Shell, { SO_GESTOR } from './Shell.jsx';
 import { Carregando } from './ui.jsx';
 
 import Login from './views/Login.jsx';
@@ -21,7 +21,11 @@ import Ajustes from './views/Ajustes.jsx';
 import SemConfiguracao from './views/SemConfiguracao.jsx';
 
 export default function App() {
-  const { carregando, sessao, escolinhas, escolinhaId } = useSessao();
+  const { carregando, sessao, escolinhas, escolinhaId, gestor } = useSessao();
+
+  /* Rota de gestor aberta por professor (link colado, favorito) volta ao painel. */
+  const soGestor = (para, elemento) =>
+    gestor || !SO_GESTOR.includes(para) ? elemento : <Navigate to="/" replace />;
 
   if (!configurado) return <SemConfiguracao />;
 
@@ -52,10 +56,10 @@ export default function App() {
               <Route path="/alunos/:alunoId" element={<Alunos />} />
               <Route path="/chamada" element={<Chamada />} />
               <Route path="/chamada/:treinoId" element={<Chamada />} />
-              <Route path="/financeiro" element={<Financeiro />} />
-              <Route path="/cobrancas" element={<Cobrancas />} />
-              <Route path="/matriculas" element={<PreMatriculas />} />
-              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/financeiro" element={soGestor('/financeiro', <Financeiro />)} />
+              <Route path="/cobrancas" element={soGestor('/cobrancas', <Cobrancas />)} />
+              <Route path="/matriculas" element={soGestor('/matriculas', <PreMatriculas />)} />
+              <Route path="/relatorios" element={soGestor('/relatorios', <Relatorios />)} />
               <Route path="/ajustes" element={<Ajustes />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

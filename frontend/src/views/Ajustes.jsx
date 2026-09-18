@@ -15,7 +15,21 @@ import { brl, deCentavos, DIAS_SEMANA, DIAS_CURTOS, hora, iniciais, mascaraTelef
 import LinkMatricula from './LinkMatricula.jsx';
 
 export default function Ajustes() {
-  const { escolinha } = useSessao();
+  const { gestor } = useSessao();
+
+  /* O professor vê as turmas e a equipe, e cuida da própria conta. */
+  if (!gestor) {
+    return (
+      <>
+        <PageHead titulo="Ajustes" sub="Turmas, equipe e a sua conta." />
+        <div className="space-y-4">
+          <Turmas />
+          <Equipe />
+          <Conta />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -28,7 +42,7 @@ export default function Ajustes() {
         <Quesitos />
         <Equipe />
         <Conta />
-        {escolinha?.papel === 'dono' && <ZonaDeRisco />}
+        <ZonaDeRisco />
       </div>
     </>
   );
@@ -55,6 +69,7 @@ function DadosEscolinha() {
         local_padrao: f.get('local_padrao').trim() || null,
         chave_pix: f.get('chave_pix').trim() || null,
         dia_vencimento: Number(f.get('dia_vencimento')),
+        tolerancia_atraso: Number(f.get('tolerancia_atraso')),
       },
       { onError: (err) => setErro(err.message) }
     );
@@ -82,6 +97,18 @@ function DadosEscolinha() {
             {[5, 10, 15, 20, 25].map((d) => <option key={d} value={d}>{d}</option>)}
           </Select>
         </Field>
+        <Field
+          label="Aviso de pagamento em atraso"
+          dica="Quando o aviso aparece na chamada e no link do responsável. A tela de Cobranças mostra o vencido desde o primeiro dia."
+        >
+          <Select name="tolerancia_atraso" defaultValue={String(escolinha.tolerancia_atraso ?? 5)}>
+            {[0, 3, 5, 7, 10, 15, 30].map((d) => (
+              <option key={d} value={d}>
+                {d === 0 ? 'Logo depois do vencimento' : `${d} dias depois do vencimento`}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <div className="sm:col-span-2"><Alerta>{erro}</Alerta></div>
         <div className="sm:col-span-2">
           <Btn type="submit" carregando={salvar.isPending}>Salvar</Btn>
@@ -94,6 +121,7 @@ function DadosEscolinha() {
 /* ---------------------------------------------------------------- */
 function Turmas() {
   const toast = useToast();
+  const { gestor } = useSessao();
   const turmas = useTurmas();
   const [editando, setEditando] = useState(null);
   const [nova, setNova] = useState(false);
@@ -107,7 +135,7 @@ function Turmas() {
     <>
       <Panel
         titulo="Turmas"
-        extra={<Btn variante="ghost" className="!min-h-8 !px-3 !text-xs" onClick={() => setNova(true)}>+ Nova turma</Btn>}
+        extra={gestor && <Btn variante="ghost" className="!min-h-8 !px-3 !text-xs" onClick={() => setNova(true)}>+ Nova turma</Btn>}
       >
         {turmas.isPending ? (
           <Esqueleto linhas={4} />
@@ -125,17 +153,21 @@ function Turmas() {
                       : 'sem grade — os treinos não serão gerados sozinhos'}
                   </small>
                 </div>
-                <span className="tnum text-xs text-ink2">{brl(t.mensalidade_centavos)}</span>
+                {gestor && <span className="tnum text-xs text-ink2">{brl(t.mensalidade_centavos)}</span>}
                 <Tag>{t.atletas}/{t.capacidade}</Tag>
-                <Btn variante="ghost" className="!min-h-9 !px-3 !text-xs" onClick={() => setEditando(t)}>Editar</Btn>
-                <button
-                  onClick={() => setApagando(t)}
-                  className="px-1 text-ink3 transition hover:text-bad"
-                  title="Apagar turma"
-                  aria-label={`Apagar ${t.nome}`}
-                >
-                  ✕
-                </button>
+                {gestor && (
+                  <>
+                    <Btn variante="ghost" className="!min-h-9 !px-3 !text-xs" onClick={() => setEditando(t)}>Editar</Btn>
+                    <button
+                      onClick={() => setApagando(t)}
+                      className="px-1 text-ink3 transition hover:text-bad"
+                      title="Apagar turma"
+                      aria-label={`Apagar ${t.nome}`}
+                    >
+                      ✕
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -458,11 +490,11 @@ function Equipe() {
                     aria-label={`Papel de ${m.perfil?.nome}`}
                   >
                     <option value="professor">Professor</option>
-                    <option value="dono">Coordenação</option>
+                    <option value="dono">Gestor</option>
                   </Select>
                 ) : (
                   <Tag tom={m.papel === 'dono' ? 'ok' : 'neutro'}>
-                    {m.papel === 'dono' ? 'Coordenação' : 'Professor'}
+                    {m.papel === 'dono' ? 'Gestor' : 'Professor'}
                   </Tag>
                 )}
 
@@ -531,7 +563,7 @@ function Equipe() {
           </>
         ) : (
           <p className="border-t border-line px-4 py-3 text-xs text-ink3">
-            Só a coordenação pode convidar ou remover gente da equipe.
+            Só o gestor pode convidar ou remover gente da equipe.
           </p>
         )}
       </Panel>

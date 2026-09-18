@@ -53,6 +53,16 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 | **Matrículas** | Fichas recebidas pelo link público, para aprovar ou recusar |
 | **Ajustes** | Dados da escolinha, link de matrícula, turmas e grade semanal, equipe, conta |
 
+### Papéis
+
+- **Gestor** — tudo.
+- **Professor** — Painel, Agenda, Chamada, Alunos e avaliações. Vê atletas,
+  turmas e contato do responsável, mas nenhum valor: mensalidade, caixa,
+  cobrança, matrícula e dados da escolinha são só do gestor. A regra está na
+  RLS, não só nas telas. Na chamada ele vê o aviso **"Pagamento em atraso"**,
+  que aparece também no link do responsável depois da tolerância que o gestor
+  configura em Ajustes.
+
 ## Testes
 
 ```bash
@@ -61,7 +71,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**134 testes.** Os de unidade cobrem as funções puras de formatação e
+**159 testes.** Os de unidade cobrem as funções puras de formatação e
 montam as telas públicas num DOM, para pegar o que o build não pega —
 import faltando, componente indefinido, quebra na primeira pintura.
 

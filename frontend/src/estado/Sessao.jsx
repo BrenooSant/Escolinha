@@ -90,6 +90,10 @@ export function ProvedorSessao({ children }) {
       escolinhas,
       escolinha,
       escolinhaId,
+      /* Gestor é o papel `dono` do banco. O professor fica só com agenda,
+         chamada e avaliações — a RLS barra o resto de qualquer jeito;
+         aqui é para não mostrar tela que só daria erro ou zero. */
+      gestor: escolinha?.papel === 'dono',
       trocarEscolinha,
       recarregar: carregarContexto,
       sair: () => apiAuth.sair(),

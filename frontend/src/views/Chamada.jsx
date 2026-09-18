@@ -432,6 +432,7 @@ function Atleta({ a, marca, motivo, onMarcar, onMotivo }) {
       <div className="min-w-0 flex-1">
         <b className="block truncate text-[13.5px] font-semibold">{a.nome}</b>
         <small className="text-xs text-ink3">{a.posicao || '—'}</small>
+        {a.em_atraso && <Tag tom="bad" className="ml-2">Pagamento em atraso</Tag>}
         {a.frequencia != null && (
           <div className="mt-1.5 flex max-w-52 items-center gap-2">
             <span className="h-1 flex-1 overflow-hidden rounded-full bg-surface2">
