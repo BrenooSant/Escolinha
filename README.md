@@ -51,7 +51,27 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 | **Financeiro** | Entradas × saídas dos últimos 6 meses, lançamentos de caixa, mensalidades por turma |
 | **Cobranças** | Vencidas, a vencer e pagas; lembrete pronto que abre no WhatsApp e fica registrado |
 | **Matrículas** | Fichas recebidas pelo link público, para aprovar ou recusar |
-| **Ajustes** | Dados da escolinha, link de matrícula, turmas e grade semanal, equipe, conta |
+| **Ajustes** | Dados da escolinha (com CNPJ/CPF), regras de cobrança e planos, link de matrícula, turmas e grade semanal, equipe, conta |
+
+### Cobrança
+
+Cada escolinha liga só o que usa — tudo nasce desligado:
+
+- **Desconto por pagar em dia** (valor fixo ou %, até X dias antes do vencimento)
+- **Multa e juros ao mês** no atraso, proporcionais aos dias
+- **Planos** bimestral, trimestral, semestral, anual… com desconto próprio
+- **Desconto de irmão**, do segundo filho do mesmo responsável em diante
+- **Taxa de matrícula**, cobrada uma vez e mostrada no link de matrícula
+- **Cobranças avulsas** (uniforme, campeonato) lançadas na ficha do atleta
+
+As regras são copiadas para cada cobrança quando ela nasce — mudar a multa
+hoje não altera o que já foi cobrado. O valor do dia (com desconto ou multa)
+aparece na ficha, em Cobranças, na mensagem do WhatsApp e no link do
+responsável, que paga por **Pix copia e cola com QR code** gerado no próprio
+app e baixa o **recibo** do que já pagou.
+
+No Financeiro, **contas a pagar e a receber** ficam pendentes até serem pagas;
+a recorrente (aluguel, salário) já deixa a do mês seguinte lançada.
 
 ### Papéis
 
@@ -71,7 +91,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**159 testes.** Os de unidade cobrem as funções puras de formatação e
+**209 testes.** Os de unidade cobrem as funções puras de formatação e
 montam as telas públicas num DOM, para pegar o que o build não pega —
 import faltando, componente indefinido, quebra na primeira pintura.
 

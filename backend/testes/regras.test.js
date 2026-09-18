@@ -258,4 +258,31 @@ describe.skipIf(!configurado)('regras de cobrança', () => {
       expect(taxa.valor_atualizado_centavos).toBe(8000);
     });
   });
+
+  describe('documento da escolinha', () => {
+    it('aceita CPF ou CNPJ só com dígitos, e recusa o resto', async () => {
+      const ruim = await gestor.from('escolinhas').update({ documento: '11.222.333/0001-81' }).eq('id', esc.id);
+      expect(ruim.error).toBeTruthy();
+      const bom = await gestor
+        .from('escolinhas').update({ documento: '11222333000181', razao_social: 'Craque Esportes Ltda' }).eq('id', esc.id);
+      expect(bom.error).toBeNull();
+    });
+
+    it('o portal entrega o que o recibo e o Pix precisam', async () => {
+      const resp = await novoResponsavel(gestor, { escolinhaId: esc.id, nome: 'Mãe do Recibo', telefone: '(62) 95555-6666' });
+      const a = await novoAluno(gestor, {
+        escolinhaId: esc.id, turmaId: turma.id, nome: 'Filho do Recibo', numero: 11, responsavel_id: resp.id,
+      });
+      const [taxa] = await cobrancas(a.id);
+      await gestor.rpc('registrar_pagamento', { p_mensalidade: taxa.id, p_metodo: 'pix' });
+
+      const { data: token } = await gestor.rpc('token_responsavel', { p_responsavel: resp.id });
+      const { data } = await clienteAnonimo().rpc('portal_responsavel', { p_token: token });
+      expect(data.escolinha.documento).toBe('11222333000181');
+      expect(data.escolinha.razao_social).toBe('Craque Esportes Ltda');
+      const paga = data.filhos[0].mensalidades.find((m) => m.id === taxa.id);
+      expect(paga.metodo).toBe('pix');
+      expect(paga.valor_pago_centavos).toBe(8000);
+    });
+  });
 });

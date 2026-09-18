@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { brl, dataBR, idade, mesExtenso } from './format.js';
 import { slug } from './csv.js';
 import { tituloCobranca, valorCobranca } from './constantes.js';
+import { mascaraDocumento, tipoDocumento } from './documento.js';
 
 const VERDE = [20, 101, 59];
 const CINZA = [124, 135, 118];
@@ -205,6 +206,14 @@ export function reciboPDF({ escolinha, aluno, mensalidade }) {
   doc.setFont('helvetica', 'normal').setFontSize(9);
   doc.text('Recibo de pagamento', 34, 50);
   if (escolinha.cidade) doc.text(escolinha.cidade, largura - 34, 50, { align: 'right' });
+  if (escolinha.documento) {
+    doc.text(
+      `${escolinha.razao_social || escolinha.nome} · ${tipoDocumento(escolinha.documento)} ${mascaraDocumento(escolinha.documento)}`,
+      largura - 34,
+      32,
+      { align: 'right' }
+    );
+  }
 
   doc.setTextColor(20).setFont('helvetica', 'bold').setFontSize(26);
   // o que entrou de fato: com o desconto de pontualidade ou a multa

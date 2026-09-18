@@ -4,6 +4,7 @@ import { useAcao } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import { registrarLembrete } from '../api/financeiro.js';
 import { brl, dataBR, linkWhatsApp, primeiroNome } from '../lib/format.js';
+import { pixCopiaECola } from '../lib/pix.js';
 
 /* A cobrança pode ser aberta da lista de atrasos ou da ficha do atleta;
    nos dois casos parte da linha de vw_mensalidades. */
@@ -24,6 +25,15 @@ export const cobrancaDeMensalidade = (m) => ({
 
 export function textoPadrao(c, escolinha) {
   const resp = primeiroNome(c.responsavelNome) || 'tudo bem';
+  const pix = escolinha?.chave_pix
+    ? pixCopiaECola({
+        chave: escolinha.chave_pix,
+        nome: escolinha.razao_social || escolinha.nome,
+        cidade: (escolinha.cidade || '').split(',')[0],
+        valorCentavos: c.valorCentavos,
+        txid: c.mensalidadeId,
+      })
+    : null;
   const atraso = c.diasAtraso > 0
     ? `venceu em ${dataBR(c.vencimento)} e está com ${c.diasAtraso} dia${c.diasAtraso > 1 ? 's' : ''} de atraso`
     : `vence em ${dataBR(c.vencimento)}`;
@@ -40,6 +50,7 @@ export function textoPadrao(c, escolinha) {
         : '') +
     `\n` +
     (escolinha?.chave_pix ? `PIX: ${escolinha.chave_pix}\n` : '') +
+    (pix ? `\nPix copia e cola (já com o valor):\n${pix}\n` : '') +
     `\nAssim que pagar, é só mandar o comprovante por aqui. ` +
     `Qualquer dificuldade a gente conversa e parcela. Obrigado!`
   );
