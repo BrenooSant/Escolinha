@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alerta, Btn, Carregando, Jersey, Sheet, SheetFoot, Tag, Textarea } from '../ui.jsx';
 import * as apiPortal from '../api/portal.js';
-import { brl, corFreq, dataBR, dataCurta, diaDaSemana, hora, mesExtenso } from '../lib/format.js';
+import { brl, corFreq, dataBR, dataCurta, diaDaSemana, hora } from '../lib/format.js';
+import { tituloCobranca, valorCobranca } from '../lib/constantes.js';
 
 /* Página do responsável. Sem login: tudo sai do token que está no link,
    e o servidor só devolve os filhos daquele responsável. Só leitura,
@@ -110,24 +111,29 @@ function Filho({ f, pix, onAvisar }) {
         ))}
       </div>
 
-      <Bloco titulo="Mensalidades">
+      <Bloco titulo="Pagamentos">
         <ul className="-mx-4">
           {f.mensalidades.length === 0 && (
-            <li className="px-4 text-[13px] text-ink3">Nenhuma mensalidade lançada ainda.</li>
+            <li className="px-4 text-[13px] text-ink3">Nenhuma cobrança lançada ainda.</li>
           )}
-          {f.mensalidades.map((m) => (
+          {f.mensalidades.filter((m) => m.status !== 'cancelada').map((m) => {
+            const { valor, nota } = valorCobranca(m);
+            return (
             <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 last:border-b-0">
               <div className="min-w-0 flex-1">
-                <b className="block text-[13px] font-semibold capitalize">{mesExtenso(m.competencia)}</b>
-                <small className="text-xs text-ink3">
+                <b className="block text-[13px] font-semibold first-letter:uppercase">{tituloCobranca(m)}</b>
+                <small className="block text-xs text-ink3">
                   {m.status === 'paga'
                     ? `pago em ${dataBR(m.pago_em)}`
                     : `vence em ${dataBR(m.vencimento)}`}
                 </small>
+                {nota && <small className="block text-xs text-ink3">{nota}</small>}
               </div>
-              <b className="tnum text-[13px]">{brl(m.valor_centavos)}</b>
+              <b className="tnum text-[13px]">{brl(valor)}</b>
               {m.status === 'paga' ? (
                 <Tag tom="ok">Quitada</Tag>
+              ) : m.status === 'isenta' ? (
+                <Tag>Isento</Tag>
               ) : m.avisado_em ? (
                 <Tag tom="warn">Aguardando confirmação</Tag>
               ) : m.dias_atraso > 0 ? (
@@ -141,7 +147,8 @@ function Filho({ f, pix, onAvisar }) {
                 </Btn>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {pix && abertas.length > 0 && (
@@ -235,8 +242,8 @@ function AvisarPagamento({ token, mensalidade, onFechar, onPronto }) {
       <header className="px-5 pt-5">
         <h3 className="text-lg">Avisar que pagou</h3>
         <p className="mt-1.5 text-[13px] text-ink3">
-          A mensalidade de <b className="capitalize">{mesExtenso(mensalidade.competencia)}</b>,{' '}
-          {brl(mensalidade.valor_centavos)}. A coordenação confere no extrato e confirma —
+          <b className="first-letter:uppercase">{tituloCobranca(mensalidade)}</b>,{' '}
+          {brl(valorCobranca(mensalidade).valor)}. A coordenação confere no extrato e confirma —
           até lá ela fica marcada como aguardando.
         </p>
       </header>

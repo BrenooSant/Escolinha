@@ -74,6 +74,10 @@ export async function salvarLancamento(id, dados) {
   return exec(supabase.from('lancamentos').update(dados).eq('id', id).select().single());
 }
 
+export async function obter(mensalidadeId) {
+  return exec(supabase.from('vw_mensalidades').select('*').eq('id', mensalidadeId).single());
+}
+
 /* Mensalidades de um atleta, da mais nova para a mais antiga —
    alimenta o histórico da ficha. */
 export async function doAluno(alunoId, limite = 12) {

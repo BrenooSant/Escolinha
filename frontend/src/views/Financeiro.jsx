@@ -337,10 +337,13 @@ export default function Financeiro() {
         ) : (
           <ul>
             {(turmas.data ?? []).map((t) => {
-              const dela = mensalidades.data.filter((m) => m.turma_nome === t.nome);
+              // só mensalidade: avulsa (uniforme, taxa) não é "atleta da turma"
+              const dela = mensalidades.data.filter(
+                (m) => m.turma_nome === t.nome && m.tipo === 'mensalidade' && m.status !== 'cancelada'
+              );
               if (!dela.length) return null;
               const pagas = dela.filter((m) => m.status === 'paga');
-              const totalPago = pagas.reduce((s, m) => s + m.valor_centavos, 0);
+              const totalPago = pagas.reduce((s, m) => s + (m.valor_pago_centavos ?? m.valor_centavos), 0);
               const total = dela.reduce((s, m) => s + m.valor_centavos, 0);
               return (
                 <li key={t.id} className="border-b border-line px-4 py-3 last:border-b-0">

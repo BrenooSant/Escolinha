@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alerta, Btn, Field, Input, Select, Sheet, SheetFoot, Textarea, useToast } from '../ui.jsx';
-import { useAcao, useTurmas } from '../hooks/dados.js';
+import { useAcao, usePlanos, useTurmas } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import * as apiAlunos from '../api/alunos.js';
 import { POSICOES, PARENTESCOS } from '../lib/constantes.js';
@@ -19,7 +19,7 @@ function Secao({ children }) {
 
 const vazio = {
   nome: '', nascimento: '', turma_id: '', posicao: 'Meia', numero: '',
-  mensalidade: '', dia_vencimento: '', observacoes: '', autoriza_imagem: true,
+  mensalidade: '', plano_id: '', dia_vencimento: '', observacoes: '', autoriza_imagem: true,
   resp_nome: '', resp_parentesco: 'Mãe', resp_telefone: '', resp_email: '',
 };
 
@@ -29,6 +29,7 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
   const toast = useToast();
   const { escolinhaId, escolinha } = useSessao();
   const turmas = useTurmas();
+  const planos = usePlanos();
   const [form, setForm] = useState(vazio);
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState(null);
@@ -48,7 +49,9 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
         turma_id: aluno.turma_id ?? '',
         posicao: aluno.posicao ?? 'Meia',
         numero: aluno.numero ?? '',
-        mensalidade: '',
+        // abrir vazio e salvar apagava o valor combinado (bolsa, desconto)
+        mensalidade: aluno.mensalidade_propria_centavos != null ? deCentavos(aluno.mensalidade_propria_centavos) : '',
+        plano_id: aluno.plano_id ?? '',
         dia_vencimento: aluno.dia_vencimento ?? '',
         observacoes: aluno.observacoes ?? '',
         autoriza_imagem: aluno.autoriza_imagem ?? true,
@@ -108,7 +111,10 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
         turma_id: form.turma_id || null,
         posicao: form.posicao || null,
         numero: form.numero ? Number(form.numero) : null,
-        mensalidade_centavos: form.mensalidade ? paraCentavos(form.mensalidade) : null,
+        cobranca: {
+          mensalidade_centavos: form.mensalidade ? paraCentavos(form.mensalidade) : null,
+          plano_id: form.plano_id || null,
+        },
         dia_vencimento: form.dia_vencimento ? Number(form.dia_vencimento) : null,
         observacoes: form.observacoes.trim() || null,
         autoriza_imagem: form.autoriza_imagem,
@@ -206,8 +212,8 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
 
           <Secao>Mensalidade</Secao>
           <Field
-            label="Valor"
-            dica={turma ? `Padrão do ${turma.nome}: ${brl(turma.mensalidade_centavos)}` : 'Escolha uma turma para herdar o valor.'}
+            label="Valor por mês"
+            dica={turma ? `Vazio = o da ${turma.nome}: ${brl(turma.mensalidade_centavos)}. Preencha para bolsa ou valor combinado.` : 'Escolha uma turma para herdar o valor.'}
           >
             <Input
               value={form.mensalidade}
@@ -216,6 +222,23 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
               placeholder={turma ? deCentavos(turma.mensalidade_centavos) : '130,00'}
             />
           </Field>
+          {planos.data?.some((p) => p.ativo || p.id === form.plano_id) && (
+            <Field
+              label="Plano"
+              dica="O plano cobra vários meses de uma vez. Trocar vale quando o período atual acabar."
+            >
+              <Select value={form.plano_id} onChange={set('plano_id')}>
+                <option value="">Mensal</option>
+                {planos.data
+                  .filter((p) => p.ativo || p.id === form.plano_id)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome} · {p.meses} meses{Number(p.desconto_percentual) > 0 ? ` · −${Number(p.desconto_percentual)}%` : ''}
+                    </option>
+                  ))}
+              </Select>
+            </Field>
+          )}
           <Field label="Vence todo dia" dica={`Padrão da escolinha: ${escolinha?.dia_vencimento ?? 5}`}>
             <Select value={form.dia_vencimento} onChange={set('dia_vencimento')}>
               <option value="">Usar o padrão</option>

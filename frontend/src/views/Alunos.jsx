@@ -9,7 +9,8 @@ import { brl, corFreq, dataBR, idade } from '../lib/format.js';
 import { exportarCSV } from '../lib/csv.js';
 import Ficha from './Ficha.jsx';
 import FormAluno from './FormAluno.jsx';
-import ModalCobranca, { cobrancaDeAluno } from './ModalCobranca.jsx';
+import ModalCobranca, { cobrancaDeMensalidade } from './ModalCobranca.jsx';
+import * as apiFinanceiro from '../api/financeiro.js';
 
 export default function Alunos() {
   const toast = useToast();
@@ -238,7 +239,14 @@ export default function Alunos() {
           aluno={ficha}
           onFechar={() => setFichaId(null)}
           onEditar={setEditando}
-          onCobrar={(a) => setCobranca(cobrancaDeAluno(a))}
+          onCobrar={async (a) => {
+            // a cobrança de verdade: com plano, multa ou desconto, o valor não é o da turma
+            try {
+              setCobranca(cobrancaDeMensalidade(await apiFinanceiro.obter(a.mensalidade_id)));
+            } catch (e) {
+              toast(e.message);
+            }
+          }}
         />
       )}
       <FormAluno aberto={novo || Boolean(editando)} aluno={editando} onFechar={() => { setNovo(false); setEditando(null); }} />

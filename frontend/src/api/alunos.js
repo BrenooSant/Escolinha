@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { exec, rpc } from './cliente.js';
+import { salvarDoAluno } from './cobranca.js';
 
 export async function listar(escolinhaId, { ativos = true } = {}) {
   let q = supabase.from('vw_alunos').select('*').eq('escolinha_id', escolinhaId);
@@ -33,7 +34,7 @@ export async function proximoNumero(escolinhaId) {
 
 /* Matricular cria (ou reaproveita) o responsável e depois o atleta.
    O telefone é a chave: irmãos entram sob o mesmo responsável. */
-export async function matricular(escolinhaId, { responsavel, ...aluno }) {
+export async function matricular(escolinhaId, { responsavel, cobranca, ...aluno }) {
   const responsavelId = await garantirResponsavel(escolinhaId, responsavel);
 
   const novo = await exec(
@@ -43,16 +44,20 @@ export async function matricular(escolinhaId, { responsavel, ...aluno }) {
       .select()
       .single()
   );
+  // antes de gerar a mensalidade, para ela já sair com o valor e o plano certos
+  if (cobranca) await salvarDoAluno(novo.id, cobranca);
 
   // já deixa a mensalidade do mês criada, para o atleta aparecer no financeiro
   await rpc('gerar_mensalidades', { p_escolinha: escolinhaId, p_competencia: null });
   return novo;
 }
 
-export async function salvar(escolinhaId, id, { responsavel, ...aluno }) {
+export async function salvar(escolinhaId, id, { responsavel, cobranca, ...aluno }) {
   const dados = { ...aluno };
   if (responsavel) dados.responsavel_id = await garantirResponsavel(escolinhaId, responsavel);
-  return exec(supabase.from('alunos').update(dados).eq('id', id).select().single());
+  const salvo = await exec(supabase.from('alunos').update(dados).eq('id', id).select().single());
+  if (cobranca) await salvarDoAluno(id, cobranca);
+  return salvo;
 }
 
 export async function arquivar(id) {

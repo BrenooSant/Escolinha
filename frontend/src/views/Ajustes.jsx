@@ -13,6 +13,7 @@ import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiAuth from '../api/auth.js';
 import { brl, deCentavos, DIAS_SEMANA, DIAS_CURTOS, hora, iniciais, mascaraTelefone, paraCentavos } from '../lib/format.js';
 import LinkMatricula from './LinkMatricula.jsx';
+import RegrasCobranca from './RegrasCobranca.jsx';
 
 export default function Ajustes() {
   const { gestor } = useSessao();
@@ -37,6 +38,7 @@ export default function Ajustes() {
 
       <div className="space-y-4">
         <DadosEscolinha />
+        <RegrasCobranca />
         <LinkMatricula />
         <Turmas />
         <Quesitos />

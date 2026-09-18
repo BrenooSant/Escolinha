@@ -34,6 +34,16 @@ export const paraCentavos = (texto) => {
 
 export const deCentavos = (centavos) => ((centavos ?? 0) / 100).toFixed(2).replace('.', ',');
 
+/* "2,5" → 2.5 · "10%" → 10 · vazio → 0. Percentual de multa, juros e
+   desconto; o banco confere o limite de cada um. */
+export const paraPercentual = (texto) => {
+  const n = Number(String(texto ?? '').replace('%', '').replace(',', '.').trim());
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+};
+
+/* 2.5 → "2,5" · 10 → "10" · 0 → "" (campo vazio = desligado) */
+export const dePercentual = (n) => (Number(n) ? String(Number(n)).replace('.', ',') : '');
+
 /* new Date('2026-09-05') é meia-noite em UTC e vira dia 4 no Brasil.
    Por isso as datas do banco são quebradas na mão. */
 export function paraData(iso) {

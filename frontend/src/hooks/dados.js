@@ -12,6 +12,7 @@ import * as apiFinanceiro from '../api/financeiro.js';
 import * as apiMatriculas from '../api/matriculas.js';
 import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiEquipe from '../api/equipe.js';
+import * as apiCobranca from '../api/cobranca.js';
 
 const ativo = (id) => ({ enabled: Boolean(id) });
 
@@ -191,5 +192,24 @@ export function useAcao(fn, { sucesso } = {}) {
       });
       sucesso?.(dados, variaveis);
     },
+  });
+}
+
+/* Regras de cobrança e planos: só o gestor pede, então só roda para ele. */
+export function useConfigCobranca() {
+  const { escolinhaId, gestor } = useSessao();
+  return useQuery({
+    queryKey: ['config-cobranca', escolinhaId],
+    queryFn: () => apiCobranca.config(escolinhaId),
+    ...ativo(escolinhaId && gestor),
+  });
+}
+
+export function usePlanos() {
+  const { escolinhaId, gestor } = useSessao();
+  return useQuery({
+    queryKey: ['planos', escolinhaId],
+    queryFn: () => apiCobranca.planos(escolinhaId),
+    ...ativo(escolinhaId && gestor),
   });
 }
