@@ -70,6 +70,17 @@ aparece na ficha, em Cobranças, na mensagem do WhatsApp e no link do
 responsável, que paga por **Pix copia e cola com QR code** gerado no próprio
 app e baixa o **recibo** do que já pagou.
 
+### Contrato online
+
+O gestor escreve o contrato em Ajustes (vem um modelo de exemplo para
+revisar), com campos que se preenchem sozinhos — `{{aluno}}`,
+`{{mensalidade}}`, `{{cpf_responsavel}}`… — e liga o aceite. Quem está
+entrando aceita na própria ficha do link de matrícula; quem já é aluno,
+pelo link do responsável. Fica guardado o texto exato que a pessoa leu, com
+nome, CPF, IP, navegador, data e hora e o hash SHA-256 do texto, e o gestor
+baixa o PDF na ficha do atleta. Cada edição do contrato é uma versão nova:
+quem já aceitou continua com o texto que leu.
+
 No Financeiro, **contas a pagar e a receber** ficam pendentes até serem pagas;
 a recorrente (aluguel, salário) já deixa a do mês seguinte lançada.
 
@@ -91,7 +102,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**209 testes.** Os de unidade cobrem as funções puras de formatação e
+**233 testes.** Os de unidade cobrem as funções puras de formatação e
 montam as telas públicas num DOM, para pegar o que o build não pega —
 import faltando, componente indefinido, quebra na primeira pintura.
 

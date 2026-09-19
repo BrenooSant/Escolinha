@@ -14,7 +14,8 @@ import * as apiFinanceiro from '../api/financeiro.js';
 
 export default function Alunos() {
   const toast = useToast();
-  const { gestor } = useSessao();
+  const { gestor, escolinha } = useSessao();
+  const pedeContrato = gestor && escolinha?.exige_contrato;
   const [params, setParams] = useSearchParams();
   const [termo, setTermo] = useState('');
   const [filtro, setFiltro] = useState('Todas');
@@ -148,6 +149,7 @@ export default function Alunos() {
                         </small>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           {gestor && <Tag tom={s.tom}>{s.rotulo}</Tag>}
+                          {pedeContrato && !a.contrato_assinado && <Tag tom="warn">sem contrato</Tag>}
                           {a.frequencia != null && (
                             <span className={`tnum text-[11px] font-semibold ${corFreq(a.frequencia)}`}>
                               {a.frequencia}% de presença
@@ -201,7 +203,10 @@ export default function Alunos() {
                           </div>
                         </div>
                       </td>
-                      <td>{a.turma_nome ? <Tag>{a.turma_nome}</Tag> : <span className="text-ink3">—</span>}</td>
+                      <td>
+                        {a.turma_nome ? <Tag>{a.turma_nome}</Tag> : <span className="text-ink3">—</span>}
+                        {pedeContrato && !a.contrato_assinado && <Tag tom="warn" className="ml-1.5">sem contrato</Tag>}
+                      </td>
                       <td className="text-ink2">{a.posicao || '—'}</td>
                       <td>
                         {a.responsavel_nome || '—'}

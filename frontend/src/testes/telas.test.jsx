@@ -2,7 +2,7 @@
    O build só prova que o JSX compila. Estes testes montam as telas de
    verdade num DOM e conferem que elas aparecem — é o que pega import
    faltando, componente indefinido e quebra na primeira pintura. */
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -63,6 +63,12 @@ vi.mock('../api/escolinha.js', () => ({
   painelResumo: vi.fn(),
 }));
 
+vi.mock('../api/contrato.js', () => ({
+  previaMatricula: vi.fn(),
+  previaPortal: vi.fn(),
+  aceitarPortal: vi.fn(),
+}));
+
 vi.mock('../api/portal.js', () => ({
   abrir: vi.fn(),
   avisarPagamento: vi.fn(),
@@ -75,6 +81,7 @@ import Portal from '../views/Portal.jsx';
 import SemConfiguracao from '../views/SemConfiguracao.jsx';
 import * as apiMatriculas from '../api/matriculas.js';
 import * as apiPortal from '../api/portal.js';
+import * as apiContrato from '../api/contrato.js';
 import * as apiAuth from '../api/auth.js';
 import * as apiEscolinha from '../api/escolinha.js';
 
@@ -157,6 +164,48 @@ describe('matrícula pública', () => {
     expect(screen.getByText(/foto do atleta/i)).toBeInTheDocument();
   });
 
+  it('com contrato: pede o CPF, mostra o texto e só envia depois do aceite', async () => {
+    apiMatriculas.escolinhaPorCodigo.mockResolvedValue({ ...escolinha, exige_contrato: true });
+    apiContrato.previaMatricula.mockResolvedValue({ versao: 1, texto: 'CONTRATO de Gabriel com a escolinha', hash: 'h1' });
+    apiMatriculas.enviarFicha.mockResolvedValue({ ok: true, protocolo: 'ABC123', escolinha: 'Craque do Amanhã' });
+    montar(<Matricula />, { rota: '/matricula/CRAQUE24' });
+
+    fireEvent.change(await screen.findByLabelText(/nome completo do atleta/i), { target: { value: 'Gabriel Souza' } });
+    fireEvent.change(screen.getByLabelText(/seu nome completo/i), { target: { value: 'Cristiane Souza' } });
+    fireEvent.change(screen.getByLabelText(/whatsapp com ddd/i), { target: { value: '62990001122' } });
+    fireEvent.change(screen.getByLabelText(/seu cpf/i), { target: { value: '529.982.247-25' } });
+    fireEvent.click(screen.getByRole('button', { name: /ler o contrato e enviar/i }));
+
+    expect(await screen.findByText('CONTRATO de Gabriel com a escolinha')).toBeInTheDocument();
+    const aceitar = screen.getByRole('button', { name: /aceitar e enviar/i });
+    expect(aceitar).toBeDisabled();
+    expect(apiMatriculas.enviarFicha).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByLabelText(/li o contrato e aceito/i));
+    fireEvent.click(aceitar);
+
+    await screen.findByText(/ficha enviada/i);
+    expect(apiMatriculas.enviarFicha).toHaveBeenCalledWith(
+      'CRAQUE24',
+      expect.objectContaining({ resp_cpf: '52998224725', contrato_aceito: true, contrato_hash: 'h1' })
+    );
+  });
+
+  it('com contrato, CPF inválido nem abre o texto', async () => {
+    apiMatriculas.escolinhaPorCodigo.mockResolvedValue({ ...escolinha, exige_contrato: true });
+    apiContrato.previaMatricula.mockClear();
+    montar(<Matricula />, { rota: '/matricula/CRAQUE24' });
+
+    fireEvent.change(await screen.findByLabelText(/nome completo do atleta/i), { target: { value: 'Gabriel Souza' } });
+    fireEvent.change(screen.getByLabelText(/seu nome completo/i), { target: { value: 'Cristiane Souza' } });
+    fireEvent.change(screen.getByLabelText(/whatsapp com ddd/i), { target: { value: '62990001122' } });
+    fireEvent.change(screen.getByLabelText(/seu cpf/i), { target: { value: '111.111.111-11' } });
+    fireEvent.click(screen.getByRole('button', { name: /ler o contrato e enviar/i }));
+
+    expect(await screen.findByText(/cpf válido/i)).toBeInTheDocument();
+    expect(apiContrato.previaMatricula).not.toHaveBeenCalled();
+  });
+
   it('avisa quando o link não vale mais, sem expor nada', async () => {
     apiMatriculas.escolinhaPorCodigo.mockResolvedValue(null);
     montar(<Matricula />, { rota: '/matricula/SUMIU00' });
@@ -225,6 +274,27 @@ describe('portal do responsável', () => {
 
     expect(await screen.findByText(/aguardando confirmação/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /já paguei/i })).not.toBeInTheDocument();
+  });
+
+  it('cobrança aberta oferece Pix; a paga, o recibo', async () => {
+    apiPortal.abrir.mockResolvedValue(dados);
+    montar(<Portal />, { rota: '/portal/abc123' });
+
+    await screen.findByRole('heading', { name: 'Helena Duarte' });
+    expect(screen.getAllByRole('button', { name: /pagar com pix/i })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^recibo$/i })).toHaveLength(1);
+  });
+
+  it('contrato pendente aparece para o responsável aceitar', async () => {
+    apiPortal.abrir.mockResolvedValue({
+      ...dados,
+      filhos: [{ ...dados.filhos[0], id: 'a1', contrato: { status: 'pendente' } }],
+    });
+    montar(<Portal />, { rota: '/portal/abc123' });
+
+    expect(await screen.findByText(/contrato de matrícula pendente/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /ler e aceitar/i }));
+    expect(await screen.findByLabelText(/seu cpf/i)).toBeInTheDocument();
   });
 
   it('link inválido não mostra dado nenhum', async () => {

@@ -15,6 +15,7 @@ import { brl, deCentavos, DIAS_SEMANA, DIAS_CURTOS, hora, iniciais, mascaraTelef
 import { documentoValido, mascaraDocumento, soDigitos } from '../lib/documento.js';
 import LinkMatricula from './LinkMatricula.jsx';
 import RegrasCobranca from './RegrasCobranca.jsx';
+import ContratoAjustes from './ContratoAjustes.jsx';
 
 export default function Ajustes() {
   const { gestor } = useSessao();
@@ -40,6 +41,7 @@ export default function Ajustes() {
       <div className="space-y-4">
         <DadosEscolinha />
         <RegrasCobranca />
+        <ContratoAjustes />
         <LinkMatricula />
         <Turmas />
         <Quesitos />

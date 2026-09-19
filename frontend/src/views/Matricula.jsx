@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Alerta, Btn, Carregando, Field, Input, Jersey, Select, Textarea } from '../ui.jsx';
+import { Alerta, Btn, Carregando, Field, Input, Jersey, Select, Sheet, SheetFoot, Textarea } from '../ui.jsx';
 import { escolinhaPorCodigo, enviarFicha } from '../api/matriculas.js';
+import { previaMatricula } from '../api/contrato.js';
+import { cpfValido, mascaraDocumento, soDigitos } from '../lib/documento.js';
 import * as apiFotos from '../api/fotos.js';
 import { POSICOES, PARENTESCOS } from '../lib/constantes.js';
 import { brl, mascaraTelefone } from '../lib/format.js';
@@ -18,6 +20,10 @@ export default function Matricula() {
   const [foto, setFoto] = useState(null);        // { caminho, previa }
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const campoFoto = useRef(null);
+  const [cpf, setCpf] = useState('');
+  // { dados, texto, hash } quando o contrato está aberto para leitura
+  const [contrato, setContrato] = useState(null);
+  const [aceito, setAceito] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -27,28 +33,57 @@ export default function Matricula() {
     return () => { vivo = false; };
   }, [codigo]);
 
+  const mandar = async (dados) => {
+    setErro(null);
+    setEnviando(true);
+    try {
+      const r = await enviarFicha(codigo, dados);
+      setContrato(null);
+      setPronto(r);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      // o gestor trocou o contrato enquanto a pessoa lia: mostra o novo
+      if (contrato && /atualizado/i.test(err.message)) await abrirContrato(contrato.dados);
+      setErro(err.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const abrirContrato = async (dados) => {
+    const p = await previaMatricula(codigo, dados);
+    setAceito(false);
+    setContrato(p ? { dados, ...p } : null);
+    return p;
+  };
+
   const enviar = async (e) => {
     e.preventDefault();
     setErro(null);
-    setEnviando(true);
     const f = new FormData(e.currentTarget);
+    const dados = {
+      aluno_nome: f.get('aluno_nome'),
+      nascimento: f.get('nascimento') || null,
+      posicao: f.get('posicao'),
+      turma_id: f.get('turma_id') || null,
+      observacoes: f.get('observacoes'),
+      autoriza_imagem: f.get('autoriza_imagem') === 'on',
+      foto_path: foto?.caminho ?? null,
+      resp_nome: f.get('resp_nome'),
+      resp_parentesco: f.get('resp_parentesco'),
+      resp_telefone: telefone,
+      resp_email: f.get('resp_email'),
+      resp_cpf: soDigitos(cpf) || null,
+    };
 
+    if (!escolinha.exige_contrato) return mandar(dados);
+
+    // com contrato: primeiro a pessoa lê o texto já com os dados dela
+    if (!cpfValido(cpf)) return setErro('Informe um CPF válido — ele vai no contrato.');
+    setEnviando(true);
     try {
-      const r = await enviarFicha(codigo, {
-        aluno_nome: f.get('aluno_nome'),
-        nascimento: f.get('nascimento') || null,
-        posicao: f.get('posicao'),
-        turma_id: f.get('turma_id') || null,
-        observacoes: f.get('observacoes'),
-        autoriza_imagem: f.get('autoriza_imagem') === 'on',
-        foto_path: foto?.caminho ?? null,
-        resp_nome: f.get('resp_nome'),
-        resp_parentesco: f.get('resp_parentesco'),
-        resp_telefone: telefone,
-        resp_email: f.get('resp_email'),
-      });
-      setPronto(r);
-      window.scrollTo(0, 0);
+      const p = await abrirContrato(dados);
+      if (!p) await mandar(dados); // a escolinha desligou o contrato agora há pouco
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -111,7 +146,7 @@ export default function Matricula() {
             </span>
             <b className="tnum font-display text-2xl">{pronto.protocolo}</b>
           </div>
-          <Btn variante="ghost" className="mt-5" onClick={() => { setPronto(null); setTelefone(''); setFoto(null); }}>
+          <Btn variante="ghost" className="mt-5" onClick={() => { setPronto(null); setTelefone(''); setFoto(null); setCpf(''); }}>
             Enviar outra ficha
           </Btn>
           <p className="mt-2 text-[11.5px] text-ink3">Tem mais de um filho? É só preencher de novo.</p>
@@ -125,7 +160,7 @@ export default function Matricula() {
       <form onSubmit={enviar} className="grid grid-cols-1 gap-3.5 p-5 sm:grid-cols-2">
         <p className="col-span-full text-[13px] text-ink3">
           Preencha a ficha do atleta. A coordenação confere e confirma a matrícula pelo WhatsApp —
-          nada é cobrado agora.
+          nada é cobrado agora.{escolinha.exige_contrato && ' Antes de enviar, você lê e aceita o contrato de matrícula.'}
         </p>
 
         <Secao>Dados do atleta</Secao>
@@ -224,6 +259,19 @@ export default function Matricula() {
         <Field label="E-mail (opcional)">
           <Input name="resp_email" type="email" maxLength={120} placeholder="cristiane@email.com" />
         </Field>
+        {escolinha.exige_contrato && (
+          <Field label="Seu CPF" dica="Vai no contrato de matrícula, que você lê antes de enviar.">
+            <Input
+              name="resp_cpf"
+              required
+              inputMode="numeric"
+              value={cpf}
+              onChange={(e) => setCpf(e.target.value)}
+              onBlur={() => setCpf((c) => mascaraDocumento(c))}
+              placeholder="000.000.000-00"
+            />
+          </Field>
+        )}
 
         <Field label="Algo que o professor precise saber" className="sm:col-span-2">
           <Textarea
@@ -244,9 +292,41 @@ export default function Matricula() {
         </div>
 
         <Btn type="submit" carregando={enviando} disabled={enviandoFoto} className="col-span-full w-full">
-          Enviar ficha para a escolinha
+          {escolinha.exige_contrato ? 'Ler o contrato e enviar' : 'Enviar ficha para a escolinha'}
         </Btn>
       </form>
+
+      <Sheet aberto={Boolean(contrato)} onFechar={() => setContrato(null)} rotulo="Contrato de matrícula">
+        <header className="px-5 pt-5">
+          <h3 className="text-lg">Contrato de matrícula</h3>
+          <p className="mt-1 text-[13px] text-ink3">Já com os seus dados. Leia até o fim antes de aceitar.</p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-[13px] leading-relaxed whitespace-pre-wrap">
+          {contrato?.texto}
+        </div>
+        <div className="border-t border-line px-5 py-3">
+          <label className="flex items-start gap-2.5 text-[13px] leading-snug">
+            <input
+              type="checkbox"
+              checked={aceito}
+              onChange={(e) => setAceito(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            <span>Li o contrato e aceito os termos, como responsável pelo atleta.</span>
+          </label>
+          {erro && <div className="mt-2"><Alerta>{erro}</Alerta></div>}
+        </div>
+        <SheetFoot>
+          <Btn variante="ghost" onClick={() => setContrato(null)}>Voltar à ficha</Btn>
+          <Btn
+            disabled={!aceito}
+            carregando={enviando}
+            onClick={() => mandar({ ...contrato.dados, contrato_aceito: true, contrato_hash: contrato.hash })}
+          >
+            Aceitar e enviar
+          </Btn>
+        </SheetFoot>
+      </Sheet>
     </Moldura>
   );
 }
