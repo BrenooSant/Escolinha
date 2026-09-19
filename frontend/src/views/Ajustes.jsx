@@ -12,7 +12,9 @@ import * as apiEquipe from '../api/equipe.js';
 import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiAuth from '../api/auth.js';
 import { brl, deCentavos, DIAS_SEMANA, DIAS_CURTOS, hora, iniciais, mascaraTelefone, paraCentavos } from '../lib/format.js';
+import { documentoValido, mascaraDocumento, soDigitos } from '../lib/documento.js';
 import LinkMatricula from './LinkMatricula.jsx';
+import RegrasCobranca from './RegrasCobranca.jsx';
 
 export default function Ajustes() {
   const { gestor } = useSessao();
@@ -37,6 +39,7 @@ export default function Ajustes() {
 
       <div className="space-y-4">
         <DadosEscolinha />
+        <RegrasCobranca />
         <LinkMatricula />
         <Turmas />
         <Quesitos />
@@ -62,9 +65,15 @@ function DadosEscolinha() {
     e.preventDefault();
     setErro(null);
     const f = new FormData(e.currentTarget);
+    const documento = soDigitos(f.get('documento'));
+    if (documento && !documentoValido(documento)) {
+      return setErro('CNPJ ou CPF inválido — confira os números.');
+    }
     salvar.mutate(
       {
         nome: f.get('nome').trim(),
+        razao_social: f.get('razao_social').trim() || null,
+        documento: documento || null,
         cidade: f.get('cidade').trim() || null,
         local_padrao: f.get('local_padrao').trim() || null,
         chave_pix: f.get('chave_pix').trim() || null,
@@ -82,6 +91,18 @@ function DadosEscolinha() {
       <form onSubmit={enviar} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Nome" className="sm:col-span-2">
           <Input name="nome" required minLength={2} defaultValue={escolinha.nome} />
+        </Field>
+        <Field label="CNPJ ou CPF" dica="Sai no recibo. Sem CNPJ, use o CPF do responsável pela escolinha.">
+          <Input
+            name="documento"
+            inputMode="numeric"
+            defaultValue={escolinha.documento ? mascaraDocumento(escolinha.documento) : ''}
+            onBlur={(e) => { e.target.value = mascaraDocumento(e.target.value); }}
+            placeholder="12.345.678/0001-90"
+          />
+        </Field>
+        <Field label="Razão social ou nome completo" dica="Como está no CNPJ ou no CPF. Vazio = o nome da escolinha.">
+          <Input name="razao_social" maxLength={100} defaultValue={escolinha.razao_social ?? ''} placeholder="Craque Esportes Ltda" />
         </Field>
         <Field label="Cidade">
           <Input name="cidade" defaultValue={escolinha.cidade ?? ''} placeholder="Goiânia, GO" />

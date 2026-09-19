@@ -2,8 +2,8 @@
    é o teste que dá para pendurar num hook de commit. */
 import { describe, expect, it } from 'vitest';
 import {
-  brl, brlCurto, corFreq, dataBR, dataCurta, deCentavos, diaDaSemana, hora, idade,
-  iniciais, linkWhatsApp, mascaraTelefone, mesExtenso, paraCentavos, paraData,
+  brl, brlCurto, corFreq, dataBR, dataCurta, deCentavos, dePercentual, diaDaSemana, hora, idade,
+  iniciais, linkWhatsApp, mascaraTelefone, mesExtenso, paraCentavos, paraData, paraPercentual,
   primeiroNome, tomFreq,
 } from './format.js';
 
@@ -153,5 +153,25 @@ describe('cor da frequência', () => {
   it('fica neutra quando ainda não há treino', () => {
     expect(tomFreq(null)).toBe('neutro');
     expect(corFreq(null)).toBe('text-ink3');
+  });
+});
+
+describe('percentual', () => {
+  it('aceita vírgula, ponto e o sinal de %', () => {
+    expect(paraPercentual('2,5')).toBe(2.5);
+    expect(paraPercentual('1.25')).toBe(1.25);
+    expect(paraPercentual('10%')).toBe(10);
+  });
+
+  it('vazio, texto ou negativo viram zero (regra desligada)', () => {
+    expect(paraPercentual('')).toBe(0);
+    expect(paraPercentual('abc')).toBe(0);
+    expect(paraPercentual('-3')).toBe(0);
+  });
+
+  it('volta para o campo com vírgula, e zero vira campo vazio', () => {
+    expect(dePercentual(2.5)).toBe('2,5');
+    expect(dePercentual('10.00')).toBe('10');
+    expect(dePercentual(0)).toBe('');
   });
 });

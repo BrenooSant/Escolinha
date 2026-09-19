@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { brl, dataBR, idade, mesExtenso } from './format.js';
 import { slug } from './csv.js';
+import { tituloCobranca, valorCobranca } from './constantes.js';
+import { mascaraDocumento, tipoDocumento } from './documento.js';
 
 const VERDE = [20, 101, 59];
 const CINZA = [124, 135, 118];
@@ -202,11 +204,20 @@ export function reciboPDF({ escolinha, aluno, mensalidade }) {
   doc.setTextColor(255).setFont('helvetica', 'bold').setFontSize(15);
   doc.text(escolinha.nome, 34, 32);
   doc.setFont('helvetica', 'normal').setFontSize(9);
-  doc.text('Recibo de mensalidade', 34, 50);
+  doc.text('Recibo de pagamento', 34, 50);
   if (escolinha.cidade) doc.text(escolinha.cidade, largura - 34, 50, { align: 'right' });
+  if (escolinha.documento) {
+    doc.text(
+      `${escolinha.razao_social || escolinha.nome} · ${tipoDocumento(escolinha.documento)} ${mascaraDocumento(escolinha.documento)}`,
+      largura - 34,
+      32,
+      { align: 'right' }
+    );
+  }
 
   doc.setTextColor(20).setFont('helvetica', 'bold').setFontSize(26);
-  doc.text(brl(mensalidade.valor_centavos), 34, 118);
+  // o que entrou de fato: com o desconto de pontualidade ou a multa
+  doc.text(brl(valorCobranca(mensalidade).valor), 34, 118);
 
   doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...CINZA);
   doc.text('Referente a', 34, 148);
@@ -215,7 +226,8 @@ export function reciboPDF({ escolinha, aluno, mensalidade }) {
   doc.text('Pago em', 34, 238);
 
   doc.setTextColor(20).setFont('helvetica', 'bold');
-  doc.text(mesExtenso(mensalidade.competencia), 130, 148);
+  const referente = tituloCobranca(mensalidade);
+  doc.text(referente.charAt(0).toUpperCase() + referente.slice(1), 130, 148);
   doc.text(aluno.nome + (aluno.turma_nome ? ` · ${aluno.turma_nome}` : ''), 130, 178);
   doc.text(aluno.responsavel_nome || '—', 130, 208);
   doc.text(

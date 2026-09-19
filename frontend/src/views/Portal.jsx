@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alerta, Btn, Carregando, Jersey, Sheet, SheetFoot, Tag, Textarea } from '../ui.jsx';
 import * as apiPortal from '../api/portal.js';
-import { brl, corFreq, dataBR, dataCurta, diaDaSemana, hora, mesExtenso } from '../lib/format.js';
+import { brl, corFreq, dataBR, dataCurta, diaDaSemana, hora } from '../lib/format.js';
+import { tituloCobranca, valorCobranca } from '../lib/constantes.js';
+import { pixCopiaECola } from '../lib/pix.js';
 
 /* Página do responsável. Sem login: tudo sai do token que está no link,
    e o servidor só devolve os filhos daquele responsável. Só leitura,
@@ -11,6 +13,7 @@ export default function Portal() {
   const { token } = useParams();
   const [dados, setDados] = useState(undefined);
   const [avisando, setAvisando] = useState(null);
+  const [pagando, setPagando] = useState(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -51,9 +54,25 @@ export default function Portal() {
       ) : (
         <div className="space-y-4">
           {filhos.map((f) => (
-            <Filho key={f.nome} f={f} pix={escolinha.chave_pix} onAvisar={setAvisando} />
+            <Filho
+              key={f.nome}
+              f={f}
+              escolinha={escolinha}
+              responsavel={responsavel}
+              onAvisar={setAvisando}
+              onPagar={setPagando}
+            />
           ))}
         </div>
+      )}
+
+      {pagando && (
+        <PagarPix
+          escolinha={escolinha}
+          mensalidade={pagando}
+          onFechar={() => setPagando(null)}
+          onAvisar={() => { setAvisando(pagando); setPagando(null); }}
+        />
       )}
 
       {avisando && (
@@ -68,8 +87,19 @@ export default function Portal() {
   );
 }
 
-function Filho({ f, pix, onAvisar }) {
+function Filho({ f, escolinha, responsavel, onAvisar, onPagar }) {
+  const pix = escolinha.chave_pix;
   const abertas = f.mensalidades.filter((m) => m.status === 'aberta');
+
+  // o jsPDF só entra para quem de fato baixa o recibo
+  const recibo = async (m) => {
+    const { reciboPDF } = await import('../lib/pdf.js');
+    reciboPDF({
+      escolinha,
+      aluno: { nome: f.nome, turma_nome: f.turma, responsavel_nome: responsavel.nome },
+      mensalidade: m,
+    });
+  };
 
   return (
     <section className="overflow-hidden rounded-xl border border-line bg-surface">
@@ -110,24 +140,29 @@ function Filho({ f, pix, onAvisar }) {
         ))}
       </div>
 
-      <Bloco titulo="Mensalidades">
+      <Bloco titulo="Pagamentos">
         <ul className="-mx-4">
           {f.mensalidades.length === 0 && (
-            <li className="px-4 text-[13px] text-ink3">Nenhuma mensalidade lançada ainda.</li>
+            <li className="px-4 text-[13px] text-ink3">Nenhuma cobrança lançada ainda.</li>
           )}
-          {f.mensalidades.map((m) => (
+          {f.mensalidades.filter((m) => m.status !== 'cancelada').map((m) => {
+            const { valor, nota } = valorCobranca(m);
+            return (
             <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 last:border-b-0">
               <div className="min-w-0 flex-1">
-                <b className="block text-[13px] font-semibold capitalize">{mesExtenso(m.competencia)}</b>
-                <small className="text-xs text-ink3">
+                <b className="block text-[13px] font-semibold first-letter:uppercase">{tituloCobranca(m)}</b>
+                <small className="block text-xs text-ink3">
                   {m.status === 'paga'
                     ? `pago em ${dataBR(m.pago_em)}`
                     : `vence em ${dataBR(m.vencimento)}`}
                 </small>
+                {nota && <small className="block text-xs text-ink3">{nota}</small>}
               </div>
-              <b className="tnum text-[13px]">{brl(m.valor_centavos)}</b>
+              <b className="tnum text-[13px]">{brl(valor)}</b>
               {m.status === 'paga' ? (
                 <Tag tom="ok">Quitada</Tag>
+              ) : m.status === 'isenta' ? (
+                <Tag>Isento</Tag>
               ) : m.avisado_em ? (
                 <Tag tom="warn">Aguardando confirmação</Tag>
               ) : m.dias_atraso > 0 ? (
@@ -136,12 +171,27 @@ function Filho({ f, pix, onAvisar }) {
                 <Tag tom="warn">Em aberto</Tag>
               )}
               {m.status === 'aberta' && !m.avisado_em && (
-                <Btn variante="ghost" className="w-full !min-h-9 !text-xs sm:w-auto" onClick={() => onAvisar(m)}>
-                  Já paguei
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                  {pix ? (
+                    <Btn className="!min-h-9 !text-xs" onClick={() => onPagar(m)}>Pagar com Pix</Btn>
+                  ) : null}
+                  <Btn
+                    variante="ghost"
+                    className={`!min-h-9 !text-xs ${pix ? '' : 'col-span-2'}`}
+                    onClick={() => onAvisar(m)}
+                  >
+                    Já paguei
+                  </Btn>
+                </div>
+              )}
+              {m.status === 'paga' && (
+                <Btn variante="ghost" className="w-full !min-h-9 !text-xs sm:w-auto" onClick={() => recibo(m)}>
+                  Recibo
                 </Btn>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {pix && abertas.length > 0 && (
@@ -235,8 +285,8 @@ function AvisarPagamento({ token, mensalidade, onFechar, onPronto }) {
       <header className="px-5 pt-5">
         <h3 className="text-lg">Avisar que pagou</h3>
         <p className="mt-1.5 text-[13px] text-ink3">
-          A mensalidade de <b className="capitalize">{mesExtenso(mensalidade.competencia)}</b>,{' '}
-          {brl(mensalidade.valor_centavos)}. A coordenação confere no extrato e confirma —
+          <b className="inline-block first-letter:uppercase">{tituloCobranca(mensalidade)}</b>,{' '}
+          {brl(valorCobranca(mensalidade).valor)}. A coordenação confere no extrato e confirma —
           até lá ela fica marcada como aguardando.
         </p>
       </header>
@@ -277,5 +327,76 @@ function Moldura({ titulo, sub, children }) {
         </p>
       </main>
     </div>
+  );
+}
+
+/* Pix copia e cola da cobrança, no valor de hoje (com o desconto se
+   ainda vale, com multa se atrasou). O dinheiro cai direto na chave da
+   escolinha; quem confirma é a coordenação — por isso o "Já paguei". */
+function PagarPix({ escolinha, mensalidade, onFechar, onAvisar }) {
+  const { valor, nota } = valorCobranca(mensalidade);
+  const codigo = pixCopiaECola({
+    chave: escolinha.chave_pix,
+    nome: escolinha.razao_social || escolinha.nome,
+    cidade: (escolinha.cidade || '').split(',')[0],
+    valorCentavos: valor,
+    txid: mensalidade.id,
+  });
+  const [svg, setSvg] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    import('qrcode-generator').then(({ default: qrcode }) => {
+      const qr = qrcode(0, 'M');
+      qr.addData(codigo);
+      qr.make();
+      if (vivo) setSvg(qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true }));
+    });
+    return () => { vivo = false; };
+  }, [codigo]);
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(codigo);
+      setCopiado(true);
+    } catch {
+      setCopiado(false);
+    }
+  };
+
+  return (
+    <Sheet aberto onFechar={onFechar} largura="max-w-sm" rotulo="Pagar com Pix">
+      <header className="px-5 pt-5">
+        <h3 className="text-lg">Pagar com Pix</h3>
+        <p className="mt-1 text-[13px] text-ink3">
+          <span className="inline-block first-letter:uppercase">{tituloCobranca(mensalidade)}</span> ·{' '}
+          <b className="tnum text-ink">{brl(valor)}</b>
+          {nota && <span className="block text-xs">{nota}</span>}
+        </p>
+      </header>
+      <div className="space-y-3 p-5 pt-4">
+        {/* O SVG sai da biblioteca a partir do nosso próprio texto. */}
+        <div
+          className="mx-auto aspect-square w-52 rounded-lg bg-white p-1 [&>svg]:size-full"
+          aria-label="QR code do Pix"
+          dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
+        />
+        <p className="text-center text-xs text-ink3">
+          Abra o app do banco, escolha Pix → ler QR code, ou copie o código abaixo.
+        </p>
+        <p className="tnum max-h-20 overflow-y-auto rounded-lg bg-surface2 px-3 py-2 text-[11px] break-all text-ink2">
+          {codigo}
+        </p>
+        <Btn className="w-full" onClick={copiar}>{copiado ? 'Código copiado ✓' : 'Copiar código Pix'}</Btn>
+        <p className="text-center text-xs text-ink3">
+          Pagou? Toque em “Já paguei” para avisar a escolinha — ela confere e confirma.
+        </p>
+      </div>
+      <SheetFoot>
+        <Btn variante="ghost" onClick={onFechar}>Fechar</Btn>
+        <Btn variante="ghost" onClick={onAvisar}>Já paguei</Btn>
+      </SheetFoot>
+    </Sheet>
   );
 }

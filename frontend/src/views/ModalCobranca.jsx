@@ -4,44 +4,53 @@ import { useAcao } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import { registrarLembrete } from '../api/financeiro.js';
 import { brl, dataBR, linkWhatsApp, primeiroNome } from '../lib/format.js';
+import { pixCopiaECola } from '../lib/pix.js';
 
-/* A cobrança pode ser aberta da lista de atrasos (uma mensalidade) ou
-   da ficha do atleta. Estes dois adaptadores deixam as duas telas
-   falando a mesma língua. */
+/* A cobrança pode ser aberta da lista de atrasos ou da ficha do atleta;
+   nos dois casos parte da linha de vw_mensalidades. */
 export const cobrancaDeMensalidade = (m) => ({
   mensalidadeId: m.id,
+  // avulsa (uniforme, taxa) aparece pelo nome; mensalidade, pelo mês
+  descricao: m.tipo === 'avulsa' ? m.descricao || 'cobrança avulsa' : null,
+  valorOriginalCentavos: m.valor_centavos,
   alunoNome: m.aluno_nome,
   turmaNome: m.turma_nome,
   responsavelNome: m.responsavel_nome,
   telefone: m.responsavel_telefone,
-  valorCentavos: m.valor_centavos,
+  // com multa e juros se atrasou, com desconto se ainda dá tempo
+  valorCentavos: m.valor_atualizado_centavos ?? m.valor_centavos,
   vencimento: m.vencimento,
   diasAtraso: m.dias_atraso,
 });
 
-export const cobrancaDeAluno = (a) => ({
-  mensalidadeId: a.mensalidade_id,
-  alunoNome: a.nome,
-  turmaNome: a.turma_nome,
-  responsavelNome: a.responsavel_nome,
-  telefone: a.responsavel_telefone,
-  valorCentavos: a.valor_centavos,
-  vencimento: a.mensalidade_vencimento,
-  diasAtraso: a.dias_atraso,
-});
-
 export function textoPadrao(c, escolinha) {
   const resp = primeiroNome(c.responsavelNome) || 'tudo bem';
+  const pix = escolinha?.chave_pix
+    ? pixCopiaECola({
+        chave: escolinha.chave_pix,
+        nome: escolinha.razao_social || escolinha.nome,
+        cidade: (escolinha.cidade || '').split(',')[0],
+        valorCentavos: c.valorCentavos,
+        txid: c.mensalidadeId,
+      })
+    : null;
   const atraso = c.diasAtraso > 0
     ? `venceu em ${dataBR(c.vencimento)} e está com ${c.diasAtraso} dia${c.diasAtraso > 1 ? 's' : ''} de atraso`
     : `vence em ${dataBR(c.vencimento)}`;
 
   return (
     `Olá, ${resp}! Aqui é da ${escolinha?.nome || 'escolinha'} ⚽\n\n` +
-    `Passando para lembrar que a mensalidade do(a) ${primeiroNome(c.alunoNome)}` +
-    `${c.turmaNome ? ` (${c.turmaNome})` : ''} ${atraso}.\n\n` +
-    `Valor: ${brl(c.valorCentavos)}\n` +
+    `Passando para lembrar que ${c.descricao ? `a cobrança "${c.descricao}"` : 'a mensalidade'} do(a) ` +
+    `${primeiroNome(c.alunoNome)}${c.turmaNome ? ` (${c.turmaNome})` : ''} ${atraso}.\n\n` +
+    `Valor: ${brl(c.valorCentavos)}` +
+    (c.valorOriginalCentavos && c.valorCentavos > c.valorOriginalCentavos
+      ? ` (${brl(c.valorOriginalCentavos)} + multa e juros)`
+      : c.valorOriginalCentavos && c.valorCentavos < c.valorOriginalCentavos
+        ? ` com o desconto de pontualidade`
+        : '') +
+    `\n` +
     (escolinha?.chave_pix ? `PIX: ${escolinha.chave_pix}\n` : '') +
+    (pix ? `\nPix copia e cola (já com o valor):\n${pix}\n` : '') +
     `\nAssim que pagar, é só mandar o comprovante por aqui. ` +
     `Qualquer dificuldade a gente conversa e parcela. Obrigado!`
   );

@@ -5,6 +5,7 @@ import { useAcao, useAtrasos, useAvisados, useMensalidades, usePainel } from '..
 import * as apiFinanceiro from '../api/financeiro.js';
 import { brl, brlCurto, dataBR, hojeISO } from '../lib/format.js';
 import { exportarCSV } from '../lib/csv.js';
+import { valorCobranca } from '../lib/constantes.js';
 import ModalCobranca, { cobrancaDeMensalidade } from './ModalCobranca.jsx';
 
 const ABAS = ['Atrasadas', 'A vencer', 'Pagas'];
@@ -47,7 +48,7 @@ export default function Cobrancas() {
       lista.map((m) => [
         m.aluno_nome, m.turma_nome, m.responsavel_nome, m.responsavel_telefone,
         dataBR(m.vencimento), m.dias_atraso || 0,
-        (m.valor_centavos / 100).toFixed(2).replace('.', ','), m.lembretes,
+        (valorCobranca(m).valor / 100).toFixed(2).replace('.', ','), m.lembretes,
       ])
     );
     toast(`${lista.length} cobranças exportadas`);
@@ -93,7 +94,10 @@ export default function Cobrancas() {
                 <div className="flex items-start gap-3">
                   <Jersey num={m.aluno_numero ?? '·'} />
                   <div className="min-w-0 flex-1">
-                    <b className="block truncate text-[13.5px] font-semibold">{m.aluno_nome}</b>
+                    <b className="block truncate text-[13.5px] font-semibold">
+                      {m.aluno_nome}
+                      {m.tipo === 'avulsa' && <span className="font-normal text-ink3"> · {m.descricao}</span>}
+                    </b>
                     <small className="block text-xs text-ink3">
                       {[m.turma_nome, m.responsavel_nome].filter(Boolean).join(' · ')}
                     </small>
@@ -106,7 +110,7 @@ export default function Cobrancas() {
                       </p>
                     )}
                   </div>
-                  <b className="tnum shrink-0 text-[15px]">{brl(m.valor_centavos)}</b>
+                  <ValorCobranca m={m} />
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:ml-12 sm:flex">
                   <Btn
@@ -160,7 +164,10 @@ export default function Cobrancas() {
                 <div className="flex items-start gap-3">
                   <Jersey num={m.aluno_numero ?? '·'} />
                   <div className="min-w-0 flex-1">
-                    <b className="block truncate text-[13.5px] font-semibold">{m.aluno_nome}</b>
+                    <b className="block truncate text-[13.5px] font-semibold">
+                      {m.aluno_nome}
+                      {m.tipo === 'avulsa' && <span className="font-normal text-ink3"> · {m.descricao}</span>}
+                    </b>
                     <small className="block text-xs text-ink3">
                       {[m.turma_nome, m.responsavel_nome].filter(Boolean).join(' · ')}
                     </small>
@@ -188,7 +195,7 @@ export default function Cobrancas() {
                       )}
                     </div>
                   </div>
-                  <b className="tnum shrink-0 text-[15px]">{brl(m.valor_centavos)}</b>
+                  <ValorCobranca m={m} />
                 </div>
 
                 {m.status === 'aberta' && (
@@ -220,5 +227,16 @@ export default function Cobrancas() {
 
       {cobranca && <ModalCobranca cobranca={cobranca} onFechar={() => setCobranca(null)} />}
     </>
+  );
+}
+
+/* Valor de hoje, com a explicação quando mudou (multa, desconto). */
+function ValorCobranca({ m }) {
+  const { valor, nota } = valorCobranca(m);
+  return (
+    <div className="shrink-0 text-right">
+      <b className="tnum block text-[15px]">{brl(valor)}</b>
+      {nota && <small className="block max-w-32 text-[11px] leading-tight text-ink3">{nota}</small>}
+    </div>
   );
 }

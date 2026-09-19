@@ -177,7 +177,14 @@ export default function Matricula() {
         <Field label="Data de nascimento">
           <Input name="nascimento" type="date" max={new Date().toISOString().slice(0, 10)} />
         </Field>
-        <Field label="Turma pretendida" dica="A coordenação pode ajustar conforme a idade.">
+        <Field
+          label="Turma pretendida"
+          dica={
+            escolinha.taxa_matricula_centavos > 0
+              ? `Valores por mês. Taxa de matrícula: ${brl(escolinha.taxa_matricula_centavos)}, cobrada uma vez. A coordenação pode ajustar a turma conforme a idade.`
+              : 'Valores por mês. A coordenação pode ajustar conforme a idade.'
+          }
+        >
           <Select name="turma_id" defaultValue="">
             <option value="">Deixar a escolinha escolher</option>
             {escolinha.turmas.map((t) => (

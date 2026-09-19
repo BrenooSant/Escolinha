@@ -91,6 +91,20 @@ export default function Painel() {
       cta: 'Cobrar',
       destino: '/cobrancas',
     },
+    r.contas_vencidas > 0 && {
+      tom: 'bad',
+      titulo: `${r.contas_vencidas} conta${r.contas_vencidas > 1 ? 's' : ''} vencida${r.contas_vencidas > 1 ? 's' : ''}`,
+      nota: 'A pagar ou a receber, lançadas como pendentes no Financeiro.',
+      cta: 'Ver contas',
+      destino: '/financeiro',
+    },
+    !r.contas_vencidas && r.contas_semana > 0 && {
+      tom: 'warn',
+      titulo: `${r.contas_semana} conta${r.contas_semana > 1 ? 's' : ''} vence${r.contas_semana > 1 ? 'm' : ''} nos próximos 7 dias`,
+      nota: 'A pagar ou a receber, lançadas como pendentes no Financeiro.',
+      cta: 'Ver contas',
+      destino: '/financeiro',
+    },
     r.chamadas_pendentes?.length > 0 && {
       tom: 'warn',
       titulo: `${r.chamadas_pendentes.length} chamada${r.chamadas_pendentes.length > 1 ? 's' : ''} sem marcar`,

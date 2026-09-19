@@ -1,5 +1,6 @@
 /* Listas fixas de interface. O que varia por escolinha (turmas,
    valores, horários) mora no banco, não aqui. */
+import { brl, dataBR, mesExtenso } from './format.js';
 
 export const POSICOES = ['Goleiro', 'Zagueiro', 'Lateral', 'Volante', 'Meia', 'Ponta', 'Atacante'];
 
@@ -26,4 +27,26 @@ export function situacaoMensalidade({ mensalidade_status, mensalidade_vencimento
   if (dias_atraso > 0) return { tom: 'bad', rotulo: 'Atrasada', dias: dias_atraso };
   const [, m, d] = String(mensalidade_vencimento || '').split('-');
   return { tom: 'warn', rotulo: d ? `Vence ${d}/${m}` : 'Em aberto' };
+}
+
+/* Nome da cobrança na lista: a avulsa diz o que é; a mensalidade de um
+   plano diz quantos meses cobre. */
+export function tituloCobranca(m) {
+  if (m.tipo === 'avulsa') return m.descricao || 'Cobrança avulsa';
+  const mes = mesExtenso(m.competencia);
+  return m.meses > 1 ? `${mes} · ${m.meses} meses` : mes;
+}
+
+/* Quanto vale hoje, e por quê. O cálculo é do banco (valor_atualizado);
+   aqui só se explica a diferença para o valor da cobrança. */
+export function valorCobranca(m) {
+  const base = m.valor_centavos;
+  if (m.status === 'paga') {
+    const pago = m.valor_pago_centavos ?? base;
+    return { valor: pago, nota: pago !== base ? `cobrado ${brl(base)}` : null };
+  }
+  const atual = m.valor_atualizado_centavos ?? base;
+  if (m.status !== 'aberta' || atual === base) return { valor: base, nota: null };
+  if (atual < base) return { valor: atual, nota: `com desconto até ${dataBR(m.desconto_ate)}` };
+  return { valor: atual, nota: `${brl(base)} + multa e juros` };
 }

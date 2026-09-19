@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alerta, Btn, Confirmar, Erro, Esqueleto, Foto, Sheet, SheetFoot, Tag, Vazio, useToast,
+  Alerta, Btn, Confirmar, Erro, Esqueleto, Field, Foto, Input, Sheet, SheetFoot, Tag, Vazio, useToast,
 } from '../ui.jsx';
 import {
   useAcao, useAvaliacoes, useHistoricoAluno, useMensalidadesDoAluno, useResponsavel,
@@ -9,10 +9,11 @@ import { useSessao } from '../estado/Sessao.jsx';
 import * as apiAlunos from '../api/alunos.js';
 import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiFinanceiro from '../api/financeiro.js';
+import * as apiCobranca from '../api/cobranca.js';
 import * as apiFotos from '../api/fotos.js';
-import { situacaoMensalidade, ROTULO_MARCA } from '../lib/constantes.js';
+import { situacaoMensalidade, tituloCobranca, valorCobranca, ROTULO_MARCA } from '../lib/constantes.js';
 import {
-  brl, corFreq, dataBR, dataCurta, idade, linkWhatsApp, mesExtenso, primeiroNome,
+  brl, corFreq, dataBR, dataCurta, idade, linkWhatsApp, paraCentavos, primeiroNome,
 } from '../lib/format.js';
 import FormAvaliacao from './FormAvaliacao.jsx';
 
@@ -51,6 +52,12 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
   const [erro, setErro] = useState(null);
   const [confirmarArquivo, setConfirmarArquivo] = useState(false);
   const [avaliando, setAvaliando] = useState(null);
+  const [avulsa, setAvulsa] = useState(false);
+  const [cancelando, setCancelando] = useState(null);
+
+  const cancelar = useAcao(() => apiCobranca.cancelar(cancelando.id), {
+    sucesso: () => { toast('Cobrança cancelada'); setCancelando(null); },
+  });
 
   const arquivar = useAcao(() => apiAlunos.arquivar(aluno.id), {
     sucesso: () => {
@@ -179,7 +186,9 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
               gestor={gestor}
             />
           )}
-          {gestor && aba === 'mensalidades' && <AbaMensalidades aluno={aluno} />}
+          {gestor && aba === 'mensalidades' && (
+            <AbaMensalidades aluno={aluno} onNovaAvulsa={() => setAvulsa(true)} onCancelar={setCancelando} />
+          )}
           {aba === 'avaliacoes' && <AbaAvaliacoes aluno={aluno} onAvaliar={setAvaliando} />}
         </div>
 
@@ -212,6 +221,18 @@ export default function Ficha({ aluno, onFechar, onEditar, onCobrar }) {
         aluno={aluno}
         avaliacao={avaliando?.novo ? null : avaliando}
         onFechar={() => setAvaliando(null)}
+      />
+
+      {gestor && <NovaAvulsa aberto={avulsa} aluno={aluno} onFechar={() => setAvulsa(false)} />}
+
+      <Confirmar
+        aberto={Boolean(cancelando)}
+        titulo={`Cancelar ${cancelando ? tituloCobranca(cancelando) : ''}?`}
+        texto="Ela sai da cobrança e do link do responsável, mas continua no histórico. Use para bolsa, erro de lançamento ou taxa que não vale para este atleta."
+        rotulo="Cancelar cobrança"
+        carregando={cancelar.isPending}
+        onConfirmar={() => cancelar.mutate()}
+        onFechar={() => setCancelando(null)}
       />
 
       <Confirmar
@@ -365,18 +386,17 @@ function LinkDoResponsavel({ aluno }) {
 }
 
 /* ---------------------------------------------------------------- */
-function AbaMensalidades({ aluno }) {
+function AbaMensalidades({ aluno, onNovaAvulsa, onCancelar }) {
   const toast = useToast();
   const { escolinha } = useSessao();
   const consulta = useMensalidadesDoAluno(aluno.id);
 
   const baixar = useAcao((id) => apiFinanceiro.registrarPagamento(id), {
-    sucesso: () => toast('Pagamento registrado — já entrou no caixa'),
+    sucesso: (valor) => toast(`Pagamento de ${brl(valor)} registrado — já entrou no caixa`),
   });
   const estornar = useAcao((id) => apiFinanceiro.estornarPagamento(id), {
     sucesso: () => toast('Pagamento estornado'),
   });
-
   const recibo = async (m) => {
     const { reciboPDF } = await import('../lib/pdf.js');
     reciboPDF({ escolinha, aluno, mensalidade: m });
@@ -384,69 +404,152 @@ function AbaMensalidades({ aluno }) {
 
   if (consulta.isPending) return <Esqueleto linhas={4} className="!p-0" />;
   if (consulta.isError) return <Erro erro={consulta.error} aoTentar={consulta.refetch} />;
-  if (!consulta.data.length) {
-    return (
-      <Vazio
-        icone="💸"
-        titulo="Nenhuma mensalidade"
-        texto="Elas são geradas todo dia 1º, ou pelo botão “Gerar as do mês” no Financeiro."
-      />
-    );
-  }
+
+  const botaoNova = aluno.ativo && (
+    <Btn variante="ghost" className="mb-3 w-full !min-h-9 !text-xs sm:w-auto" onClick={onNovaAvulsa}>
+      + Cobrança avulsa
+    </Btn>
+  );
 
   return (
-    <ul className="-mx-4 sm:-mx-5">
-      {consulta.data.map((m) => (
-        <li key={m.id} className="border-b border-line px-4 py-3 last:border-b-0 sm:px-5">
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <b className="block text-[13px] font-semibold capitalize">{mesExtenso(m.competencia)}</b>
-              <small className="text-xs text-ink3">
-                {m.status === 'paga'
-                  ? `pago em ${dataBR(m.pago_em)}${m.metodo ? ` · ${m.metodo}` : ''}`
-                  : `vence em ${dataBR(m.vencimento)}`}
-              </small>
-            </div>
-            <b className="tnum shrink-0 text-[13px]">{brl(m.valor_centavos)}</b>
-            {m.status === 'paga' ? (
-              <Tag tom="ok">Quitada</Tag>
-            ) : m.avisado_em ? (
-              <Tag tom="warn">Avisou que pagou</Tag>
-            ) : m.dias_atraso > 0 ? (
-              <Tag tom="bad">{m.dias_atraso} dias</Tag>
-            ) : (
-              <Tag tom="warn">Em aberto</Tag>
-            )}
-          </div>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {m.status === 'paga' ? (
-              <>
-                <Btn variante="ghost" className="!min-h-9 !text-xs" onClick={() => recibo(m)}>
-                  Recibo em PDF
-                </Btn>
-                <Btn
-                  variante="ghost"
-                  className="!min-h-9 !text-xs"
-                  onClick={() => estornar.mutate(m.id)}
-                  carregando={estornar.isPending && estornar.variables === m.id}
-                >
-                  Estornar
-                </Btn>
-              </>
-            ) : (
-              <Btn
-                variante="ghost"
-                className="!min-h-9 !text-xs"
-                onClick={() => baixar.mutate(m.id)}
-                carregando={baixar.isPending && baixar.variables === m.id}
-              >
-                Marcar como paga
-              </Btn>
-            )}
-          </div>
-        </li>
-      ))}
-    </ul>
+    <>
+      {botaoNova}
+      {!consulta.data.length ? (
+        <Vazio
+          icone="💸"
+          titulo="Nenhuma cobrança"
+          texto="As mensalidades são geradas todo dia 1º, ou pelo botão “Gerar as do mês” no Financeiro."
+        />
+      ) : (
+        <ul className="-mx-4 border-t border-line sm:-mx-5">
+          {consulta.data.map((m) => {
+            const { valor, nota } = valorCobranca(m);
+            return (
+              <li key={m.id} className="border-b border-line px-4 py-3 last:border-b-0 sm:px-5">
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <b className="block text-[13px] font-semibold first-letter:uppercase">{tituloCobranca(m)}</b>
+                    <small className="block text-xs text-ink3">
+                      {m.status === 'paga'
+                        ? `pago em ${dataBR(m.pago_em)}${m.metodo ? ` · ${m.metodo}` : ''}`
+                        : m.status === 'cancelada'
+                          ? 'cancelada'
+                          : `vence em ${dataBR(m.vencimento)}`}
+                    </small>
+                    {m.tipo === 'mensalidade' && m.descricao && (
+                      <small className="block text-xs text-ink3">{m.descricao}</small>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <b className="tnum block text-[13px]">{brl(valor)}</b>
+                    {nota && <small className="block text-[11px] text-ink3">{nota}</small>}
+                  </div>
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  {m.status === 'paga' ? (
+                    <Tag tom="ok">Quitada</Tag>
+                  ) : m.status === 'cancelada' ? (
+                    <Tag>Cancelada</Tag>
+                  ) : m.status === 'isenta' ? (
+                    <Tag>Isento</Tag>
+                  ) : m.avisado_em ? (
+                    <Tag tom="warn">Avisou que pagou</Tag>
+                  ) : m.dias_atraso > 0 ? (
+                    <Tag tom="bad">{m.dias_atraso} dias</Tag>
+                  ) : (
+                    <Tag tom="warn">Em aberto</Tag>
+                  )}
+                  <span className="flex-1" />
+                  {m.status === 'paga' ? (
+                    <>
+                      <Btn variante="ghost" className="!min-h-9 !text-xs" onClick={() => recibo(m)}>
+                        Recibo em PDF
+                      </Btn>
+                      <Btn
+                        variante="ghost"
+                        className="!min-h-9 !text-xs"
+                        onClick={() => estornar.mutate(m.id)}
+                        carregando={estornar.isPending && estornar.variables === m.id}
+                      >
+                        Estornar
+                      </Btn>
+                    </>
+                  ) : m.status === 'aberta' ? (
+                    <>
+                      <Btn variante="ghost" className="!min-h-9 !text-xs" onClick={() => onCancelar(m)}>
+                        Cancelar
+                      </Btn>
+                      <Btn
+                        variante="ghost"
+                        className="!min-h-9 !text-xs"
+                        onClick={() => baixar.mutate(m.id)}
+                        carregando={baixar.isPending && baixar.variables === m.id}
+                      >
+                        Marcar como paga
+                      </Btn>
+                    </>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
+  );
+}
+
+/* Uniforme, campeonato, excursão: cobrança avulsa, com multa e juros da
+   escolinha se atrasar, mas sem o desconto de pontualidade. */
+function NovaAvulsa({ aberto, aluno, onFechar }) {
+  const toast = useToast();
+  const { escolinhaId } = useSessao();
+  const [erro, setErro] = useState(null);
+
+  const criar = useAcao((dados) => apiCobranca.criarAvulsa(escolinhaId, aluno.id, dados), {
+    sucesso: () => { toast('Cobrança lançada — já aparece para o responsável'); onFechar(); },
+  });
+
+  const enviar = (e) => {
+    e.preventDefault();
+    setErro(null);
+    const f = new FormData(e.currentTarget);
+    const valor = paraCentavos(f.get('valor'));
+    if (f.get('descricao').trim().length < 2) return setErro('Diga o que está sendo cobrado.');
+    if (!valor) return setErro('Informe o valor.');
+    criar.mutate(
+      { descricao: f.get('descricao').trim(), valor_centavos: valor, vencimento: f.get('vencimento') },
+      { onError: (err) => setErro(err.message) }
+    );
+  };
+
+  const emUmaSemana = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+
+  return (
+    <Sheet aberto={aberto} onFechar={onFechar} largura="max-w-md" rotulo="Nova cobrança avulsa">
+      <form onSubmit={enviar}>
+        <div className="px-5 pt-5 pb-1">
+          <h3 className="text-lg">Cobrança avulsa</h3>
+          <p className="mt-1.5 text-[13px] text-ink3">Para {primeiroNome(aluno.nome)}, fora da mensalidade.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 px-5 py-4">
+          <Field label="O que é" className="col-span-2">
+            <Input name="descricao" maxLength={120} placeholder="Uniforme 2026" required />
+          </Field>
+          <Field label="Valor (R$)">
+            <Input name="valor" inputMode="decimal" placeholder="90,00" required />
+          </Field>
+          <Field label="Vencimento">
+            <Input name="vencimento" type="date" defaultValue={emUmaSemana} required />
+          </Field>
+          <div className="col-span-2"><Alerta>{erro}</Alerta></div>
+        </div>
+        <SheetFoot>
+          <Btn variante="ghost" type="button" onClick={onFechar}>Voltar</Btn>
+          <Btn type="submit" carregando={criar.isPending}>Lançar cobrança</Btn>
+        </SheetFoot>
+      </form>
+    </Sheet>
   );
 }
 
