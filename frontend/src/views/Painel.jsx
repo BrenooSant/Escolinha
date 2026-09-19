@@ -105,6 +105,20 @@ export default function Painel() {
       cta: 'Ver contas',
       destino: '/financeiro',
     },
+    r.aulas_experimentais_hoje > 0 && {
+      tom: 'ok',
+      titulo: `${r.aulas_experimentais_hoje} aula${r.aulas_experimentais_hoje > 1 ? 's' : ''} experimenta${r.aulas_experimentais_hoje > 1 ? 'is' : 'l'} hoje`,
+      nota: 'Receba bem — é a hora de virar matrícula.',
+      cta: 'Ver leads',
+      destino: '/leads',
+    },
+    r.leads_retorno > 0 && {
+      tom: 'warn',
+      titulo: `${r.leads_retorno} lead${r.leads_retorno > 1 ? 's' : ''} para retornar`,
+      nota: 'Interessados com retorno marcado para hoje ou antes.',
+      cta: 'Retornar',
+      destino: '/leads',
+    },
     r.chamadas_pendentes?.length > 0 && {
       tom: 'warn',
       titulo: `${r.chamadas_pendentes.length} chamada${r.chamadas_pendentes.length > 1 ? 's' : ''} sem marcar`,

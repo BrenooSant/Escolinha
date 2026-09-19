@@ -69,6 +69,10 @@ vi.mock('../api/contrato.js', () => ({
   aceitarPortal: vi.fn(),
 }));
 
+vi.mock('../api/leads.js', () => ({
+  registrarInteresse: vi.fn(),
+}));
+
 vi.mock('../api/portal.js', () => ({
   abrir: vi.fn(),
   avisarPagamento: vi.fn(),
@@ -78,6 +82,8 @@ import Login from '../views/Login.jsx';
 import PrimeiraEscolinha from '../views/PrimeiraEscolinha.jsx';
 import Matricula from '../views/Matricula.jsx';
 import Portal from '../views/Portal.jsx';
+import Interesse from '../views/Interesse.jsx';
+import * as apiLeads from '../api/leads.js';
 import SemConfiguracao from '../views/SemConfiguracao.jsx';
 import * as apiMatriculas from '../api/matriculas.js';
 import * as apiPortal from '../api/portal.js';
@@ -94,6 +100,7 @@ function montar(elemento, { rota = '/' } = {}) {
           <Routes>
             <Route path="/matricula/:codigo" element={elemento} />
             <Route path="/portal/:token" element={elemento} />
+            <Route path="/aula/:codigo" element={elemento} />
             <Route path="*" element={elemento} />
           </Routes>
         </ToastProvider>
@@ -212,6 +219,26 @@ describe('matrícula pública', () => {
 
     expect(await screen.findByText(/este link não está valendo/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/nome completo do atleta/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('aula experimental (formulário público)', () => {
+  it('manda nome e WhatsApp e agradece', async () => {
+    apiMatriculas.escolinhaPorCodigo.mockResolvedValue({
+      id: 'e1', nome: 'Craque do Amanhã', cidade: 'Goiânia, GO', turmas: [{ id: 't1', nome: 'Sub-11' }],
+    });
+    apiLeads.registrarInteresse.mockResolvedValue({ ok: true });
+    montar(<Interesse />, { rota: '/aula/CRAQUE24' });
+
+    fireEvent.change(await screen.findByLabelText(/nome da criança/i), { target: { value: 'Gabriel' } });
+    fireEvent.change(screen.getByLabelText(/whatsapp com ddd/i), { target: { value: '62990001122' } });
+    fireEvent.click(screen.getByRole('button', { name: /quero uma aula experimental/i }));
+
+    expect(await screen.findByText(/pedido recebido/i)).toBeInTheDocument();
+    expect(apiLeads.registrarInteresse).toHaveBeenCalledWith(
+      'CRAQUE24',
+      expect.objectContaining({ aluno_nome: 'Gabriel', telefone: '(62) 99000-1122' })
+    );
   });
 });
 

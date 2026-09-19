@@ -16,6 +16,8 @@ import Chamada from './views/Chamada.jsx';
 import Financeiro from './views/Financeiro.jsx';
 import Cobrancas from './views/Cobrancas.jsx';
 import PreMatriculas from './views/PreMatriculas.jsx';
+import Leads from './views/Leads.jsx';
+import Interesse from './views/Interesse.jsx';
 import Relatorios from './views/Relatorios.jsx';
 import Ajustes from './views/Ajustes.jsx';
 import SemConfiguracao from './views/SemConfiguracao.jsx';
@@ -34,6 +36,7 @@ export default function App() {
       {/* públicas: os links que saem da escolinha para fora */}
       <Route path="/matricula/:codigo" element={<Matricula />} />
       <Route path="/portal/:token" element={<Portal />} />
+      <Route path="/aula/:codigo" element={<Interesse />} />
 
       {/* o convite precisa abrir deslogado: quem recebe pode nem ter conta */}
       <Route path="/convite/:token" element={<Convite />} />
@@ -59,6 +62,7 @@ export default function App() {
               <Route path="/financeiro" element={soGestor('/financeiro', <Financeiro />)} />
               <Route path="/cobrancas" element={soGestor('/cobrancas', <Cobrancas />)} />
               <Route path="/matriculas" element={soGestor('/matriculas', <PreMatriculas />)} />
+              <Route path="/leads" element={soGestor('/leads', <Leads />)} />
               <Route path="/relatorios" element={soGestor('/relatorios', <Relatorios />)} />
               <Route path="/ajustes" element={<Ajustes />} />
               <Route path="*" element={<Navigate to="/" replace />} />

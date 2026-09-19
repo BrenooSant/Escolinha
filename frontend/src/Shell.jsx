@@ -18,6 +18,7 @@ const PATHS = {
   matriculas: 'M12 5v14M5 12h14',
   relatorios: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h7M10 17h4',
   ajustes: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-2.72 1.13V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.79-1.07l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 3.5 14.2H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.07-2.79l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9.8 3.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.79 1.07l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 20.5 9.8h.5a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.2',
+  leads: 'M3 4h18l-7 8.5V19l-4 1.5v-8z',
   mais: 'M5 12h.01M12 12h.01M19 12h.01',
   sair: 'M15 4h4v16h-4M11 8l-4 4 4 4M7 12h9',
   trocar: 'M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4',
@@ -39,6 +40,7 @@ const MENU = [
   { para: '/chamada', icone: 'chamada', rotulo: 'Chamada' },
   { para: '/financeiro', icone: 'financeiro', rotulo: 'Financeiro', gestor: true },
   { para: '/cobrancas', icone: 'cobrancas', rotulo: 'Cobranças', selo: 'devedores', gestor: true },
+  { para: '/leads', icone: 'leads', rotulo: 'Leads', selo: 'leads_retorno', gestor: true },
   { para: '/matriculas', icone: 'matriculas', rotulo: 'Matrículas', selo: 'pre_matriculas', gestor: true },
   { para: '/relatorios', icone: 'relatorios', rotulo: 'Relatórios', gestor: true },
   { para: '/ajustes', icone: 'ajustes', rotulo: 'Ajustes' },
@@ -68,9 +70,10 @@ export default function Shell({ children }) {
   const selos = {
     devedores: resumo?.devedores ?? 0,
     pre_matriculas: resumo?.pre_matriculas ?? 0,
+    leads_retorno: resumo?.leads_retorno ?? 0,
   };
   const noMenuAtivo = NO_MENU.some((m) => pathname.startsWith(m.para) && m.para !== '/');
-  const pendencias = selos.devedores + selos.pre_matriculas;
+  const pendencias = selos.devedores + selos.pre_matriculas + selos.leads_retorno;
 
   const ir = (para) => {
     setMenu(false);

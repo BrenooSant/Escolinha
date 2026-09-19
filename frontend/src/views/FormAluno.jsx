@@ -25,7 +25,7 @@ const vazio = {
 
 /* Serve para matricular e para editar: quando recebe `aluno`, entra em
    modo edição e o botão vira "Salvar". */
-export default function FormAluno({ aberto, aluno, onFechar }) {
+export default function FormAluno({ aberto, aluno, inicial, onFechar, onSalvo }) {
   const toast = useToast();
   const { escolinhaId, escolinha } = useSessao();
   const turmas = useTurmas();
@@ -61,10 +61,11 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
         resp_email: aluno.responsavel_email ?? '',
       });
     } else {
-      setForm(vazio);
+      // vindo de um lead: o que já se sabe entra preenchido
+      setForm({ ...vazio, ...(inicial ?? {}) });
       apiAlunos.proximoNumero(escolinhaId).then(setSugerido).catch(() => setSugerido(null));
     }
-  }, [aberto, aluno, escolinhaId]);
+  }, [aberto, aluno, inicial, escolinhaId]);
 
   const turma = useMemo(
     () => turmas.data?.find((t) => t.id === form.turma_id),
@@ -77,7 +78,8 @@ export default function FormAluno({ aberto, aluno, onFechar }) {
         ? apiAlunos.salvar(escolinhaId, aluno.id, dados)
         : apiAlunos.matricular(escolinhaId, dados),
     {
-      sucesso: () => {
+      sucesso: (salvo) => {
+        onSalvo?.(salvo);
         toast(
           editando
             ? 'Ficha de ' + primeiroNome(form.nome) + ' atualizada'

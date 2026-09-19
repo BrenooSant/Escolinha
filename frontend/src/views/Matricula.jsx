@@ -342,13 +342,13 @@ function Secao({ children }) {
   );
 }
 
-function Moldura({ titulo, sub, children }) {
+export function Moldura({ titulo, sub, children, rotulo = 'Matrícula' }) {
   return (
     <div className="min-h-dvh bg-ground">
       <header className="bg-accent px-5 py-7 text-[#EFF6F0] sm:py-9">
         <div className="mx-auto max-w-[640px]">
           <span className="text-[11px] font-semibold tracking-[0.18em] uppercase opacity-75">
-            Matrícula
+            {rotulo}
           </span>
           <h1 className="mt-1 font-display text-3xl leading-tight font-semibold">{titulo}</h1>
           {sub && <p className="mt-1 text-sm text-[#CFE3D6]">{sub}</p>}
