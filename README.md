@@ -50,6 +50,7 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 | **Alunos** | Ficha completa com foto, histórico de presença, responsável e situação da mensalidade |
 | **Financeiro** | Entradas × saídas dos últimos 6 meses, lançamentos de caixa, mensalidades por turma |
 | **Cobranças** | Vencidas, a vencer e pagas; lembrete pronto que abre no WhatsApp e fica registrado |
+| **Leads** | Funil de interessados, aula experimental, retornos e conversão |
 | **Matrículas** | Fichas recebidas pelo link público, para aprovar ou recusar |
 | **Ajustes** | Dados da escolinha (com CNPJ/CPF), regras de cobrança e planos, link de matrícula, turmas e grade semanal, equipe, conta |
 
@@ -81,6 +82,16 @@ nome, CPF, IP, navegador, data e hora e o hash SHA-256 do texto, e o gestor
 baixa o PDF na ficha do atleta. Cada edição do contrato é uma versão nova:
 quem já aceitou continua com o texto que leu.
 
+### Leads
+
+Funil de quem ainda não é aluno: novo → em contato → aula experimental →
+ficha enviada → matriculado (ou perdido, com o motivo). O lead entra à mão,
+pelo **formulário de aula experimental** (link curto para a bio do
+Instagram) ou sozinho, quando a ficha do link de matrícula chega — e aprovar
+ou recusar a ficha fecha o lead. Cada lead tem histórico, data de retorno e
+aula marcada; o Painel avisa quem retornar e quem vem hoje, e dá para
+matricular direto do lead.
+
 No Financeiro, **contas a pagar e a receber** ficam pendentes até serem pagas;
 a recorrente (aluguel, salário) já deixa a do mês seguinte lançada.
 
@@ -102,7 +113,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**233 testes.** Os de unidade cobrem as funções puras de formatação e
+**251 testes.** Os de unidade cobrem as funções puras de formatação e
 montam as telas públicas num DOM, para pegar o que o build não pega —
 import faltando, componente indefinido, quebra na primeira pintura.
 

@@ -13,6 +13,7 @@ import * as apiMatriculas from '../api/matriculas.js';
 import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiEquipe from '../api/equipe.js';
 import * as apiCobranca from '../api/cobranca.js';
+import * as apiLeads from '../api/leads.js';
 
 const ativo = (id) => ({ enabled: Boolean(id) });
 
@@ -186,7 +187,7 @@ export function useAcao(fn, { sucesso } = {}) {
         predicate: (q) =>
           q.queryKey.includes(escolinhaId) ||
           ['chamada', 'historico', 'treinos-turma', 'avaliacoes', 'mensalidades-aluno',
-            'responsavel'].includes(
+            'responsavel', 'leads-notas', 'contrato-aceite'].includes(
             q.queryKey[0]
           ),
       });
@@ -196,6 +197,23 @@ export function useAcao(fn, { sucesso } = {}) {
 }
 
 /* Regras de cobrança e planos: só o gestor pede, então só roda para ele. */
+export function useLeads() {
+  const { escolinhaId, gestor } = useSessao();
+  return useQuery({
+    queryKey: ['leads', escolinhaId],
+    queryFn: () => apiLeads.listar(escolinhaId),
+    ...ativo(escolinhaId && gestor),
+  });
+}
+
+export function useNotasLead(leadId) {
+  return useQuery({
+    queryKey: ['leads-notas', leadId],
+    queryFn: () => apiLeads.notas(leadId),
+    ...ativo(leadId),
+  });
+}
+
 export function useContas() {
   const { escolinhaId, gestor } = useSessao();
   return useQuery({
