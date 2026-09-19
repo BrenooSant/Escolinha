@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Alerta, Btn, Carregando, Jersey, Sheet, SheetFoot, Tag, Textarea } from '../ui.jsx';
+import { Alerta, Btn, Carregando, Field, Input, Jersey, Sheet, SheetFoot, Tag, Textarea } from '../ui.jsx';
 import * as apiPortal from '../api/portal.js';
 import { brl, corFreq, dataBR, dataCurta, diaDaSemana, hora } from '../lib/format.js';
 import { tituloCobranca, valorCobranca } from '../lib/constantes.js';
 import { pixCopiaECola } from '../lib/pix.js';
+import { cpfValido, mascaraDocumento, soDigitos } from '../lib/documento.js';
+import * as apiContrato from '../api/contrato.js';
 
 /* Página do responsável. Sem login: tudo sai do token que está no link,
    e o servidor só devolve os filhos daquele responsável. Só leitura,
@@ -14,6 +16,7 @@ export default function Portal() {
   const [dados, setDados] = useState(undefined);
   const [avisando, setAvisando] = useState(null);
   const [pagando, setPagando] = useState(null);
+  const [assinando, setAssinando] = useState(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -61,9 +64,20 @@ export default function Portal() {
               responsavel={responsavel}
               onAvisar={setAvisando}
               onPagar={setPagando}
+              onAssinar={setAssinando}
             />
           ))}
         </div>
+      )}
+
+      {assinando && (
+        <AssinarContrato
+          token={token}
+          filho={assinando}
+          responsavel={responsavel}
+          onFechar={() => setAssinando(null)}
+          onPronto={() => { setAssinando(null); carregar(); }}
+        />
       )}
 
       {pagando && (
@@ -87,7 +101,7 @@ export default function Portal() {
   );
 }
 
-function Filho({ f, escolinha, responsavel, onAvisar, onPagar }) {
+function Filho({ f, escolinha, responsavel, onAvisar, onPagar, onAssinar }) {
   const pix = escolinha.chave_pix;
   const abertas = f.mensalidades.filter((m) => m.status === 'aberta');
 
@@ -125,6 +139,16 @@ function Filho({ f, escolinha, responsavel, onAvisar, onPagar }) {
             </span>
           </span>
         </p>
+      )}
+
+      {f.contrato?.status === 'pendente' && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-warn/30 bg-warn/10 px-4 py-3 text-[13px]">
+          <span className="min-w-0 flex-1">
+            <b className="block font-semibold">Contrato de matrícula pendente</b>
+            <span className="text-ink2">A escolinha pede o seu aceite. Leva um minuto.</span>
+          </span>
+          <Btn className="w-full !min-h-9 !text-xs sm:w-auto" onClick={() => onAssinar(f)}>Ler e aceitar</Btn>
+        </div>
       )}
 
       <div className="grid grid-cols-3 border-b border-line">
@@ -396,6 +420,105 @@ function PagarPix({ escolinha, mensalidade, onFechar, onAvisar }) {
       <SheetFoot>
         <Btn variante="ghost" onClick={onFechar}>Fechar</Btn>
         <Btn variante="ghost" onClick={onAvisar}>Já paguei</Btn>
+      </SheetFoot>
+    </Sheet>
+  );
+}
+
+/* Aceite do contrato pelo portal: primeiro quem aceita (nome e CPF, que
+   entram no texto), depois o contrato já preenchido. O banco monta o
+   texto nas duas pontas e só aceita se for o mesmo que foi lido. */
+function AssinarContrato({ token, filho, responsavel, onFechar, onPronto }) {
+  const [nome, setNome] = useState(responsavel.nome);
+  const [cpf, setCpf] = useState('');
+  const [contrato, setContrato] = useState(null);
+  const [aceito, setAceito] = useState(false);
+  const [erro, setErro] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+
+  const ler = async () => {
+    setErro(null);
+    if (nome.trim().length < 5) return setErro('Informe seu nome completo.');
+    if (!cpfValido(cpf)) return setErro('CPF inválido — confira os números.');
+    setOcupado(true);
+    try {
+      setAceito(false);
+      setContrato(await apiContrato.previaPortal(token, filho.id, nome.trim(), soDigitos(cpf)));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const aceitar = async () => {
+    setErro(null);
+    setOcupado(true);
+    try {
+      await apiContrato.aceitarPortal(token, filho.id, nome.trim(), soDigitos(cpf), contrato.hash);
+      onPronto();
+    } catch (e) {
+      setErro(e.message);
+      if (/atualizado/i.test(e.message)) await ler();
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  return (
+    <Sheet aberto onFechar={onFechar} rotulo="Contrato de matrícula">
+      <header className="px-5 pt-5">
+        <h3 className="text-lg">Contrato de {filho.nome.split(' ')[0]}</h3>
+        <p className="mt-1 text-[13px] text-ink3">
+          {contrato ? 'Já com os seus dados. Leia até o fim antes de aceitar.' : 'Quem aceita, como responsável pelo atleta.'}
+        </p>
+      </header>
+
+      {!contrato ? (
+        <div className="space-y-3 px-5 py-4">
+          <Field label="Seu nome completo">
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} />
+          </Field>
+          <Field label="Seu CPF">
+            <Input
+              value={cpf}
+              inputMode="numeric"
+              onChange={(e) => setCpf(e.target.value)}
+              onBlur={() => setCpf((c) => mascaraDocumento(c))}
+              placeholder="000.000.000-00"
+            />
+          </Field>
+          <Alerta>{erro}</Alerta>
+        </div>
+      ) : (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-[13px] leading-relaxed whitespace-pre-wrap">
+            {contrato.texto}
+          </div>
+          <div className="border-t border-line px-5 py-3">
+            <label className="flex items-start gap-2.5 text-[13px] leading-snug">
+              <input
+                type="checkbox"
+                checked={aceito}
+                onChange={(e) => setAceito(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-accent"
+              />
+              <span>Li o contrato e aceito os termos, como responsável pelo atleta.</span>
+            </label>
+            {erro && <div className="mt-2"><Alerta>{erro}</Alerta></div>}
+          </div>
+        </>
+      )}
+
+      <SheetFoot>
+        <Btn variante="ghost" onClick={contrato ? () => setContrato(null) : onFechar}>
+          {contrato ? 'Voltar' : 'Cancelar'}
+        </Btn>
+        {contrato ? (
+          <Btn disabled={!aceito} carregando={ocupado} onClick={aceitar}>Aceitar</Btn>
+        ) : (
+          <Btn carregando={ocupado} onClick={ler}>Ler o contrato</Btn>
+        )}
       </SheetFoot>
     </Sheet>
   );

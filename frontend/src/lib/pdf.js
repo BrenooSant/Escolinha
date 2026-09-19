@@ -246,3 +246,57 @@ export function reciboPDF({ escolinha, aluno, mensalidade }) {
 
   doc.save(`recibo-${slug(aluno.nome)}-${mensalidade.competencia.slice(0, 7)}.pdf`);
 }
+
+/* Contrato aceito: o texto exatamente como foi lido e, no fim, o
+   registro do aceite eletrônico — quem, quando, de onde e o hash que
+   prova que o texto não mudou depois. */
+export function contratoPDF({ escolinha, aceite }) {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const largura = doc.internal.pageSize.getWidth();
+  const altura = doc.internal.pageSize.getHeight();
+  const margem = 48;
+  const util = largura - margem * 2;
+  let y = margem;
+
+  const linha = (texto, { tamanho = 10, negrito = false, cor = 20, espaco = 4 } = {}) => {
+    doc.setFont('helvetica', negrito ? 'bold' : 'normal').setFontSize(tamanho).setTextColor(cor);
+    for (const l of doc.splitTextToSize(texto, util)) {
+      if (y > altura - margem) { doc.addPage(); y = margem; }
+      doc.text(l, margem, y);
+      y += tamanho + espaco;
+    }
+  };
+
+  for (const paragrafo of aceite.texto.split(/\n/)) {
+    if (!paragrafo.trim()) { y += 6; continue; }
+    linha(paragrafo);
+  }
+
+  y += 18;
+  if (y > altura - 190) { doc.addPage(); y = margem; }
+  doc.setDrawColor(217, 223, 208).line(margem, y, largura - margem, y);
+  y += 22;
+  linha('Registro do aceite eletrônico', { tamanho: 11, negrito: true });
+  y += 4;
+  const quando = new Date(aceite.aceito_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  for (const [rotulo, valor] of [
+    ['Aceito por', `${aceite.assinante_nome} · CPF ${mascaraDocumento(aceite.assinante_cpf)}`],
+    ['Atleta', aceite.aluno_nome],
+    ['Data e hora', `${quando} (horário de Brasília)`],
+    ['Onde', aceite.origem === 'portal' ? 'link do responsável' : 'ficha de matrícula pelo link público'],
+    ['IP', aceite.ip || 'não registrado'],
+    ['Navegador', aceite.user_agent || 'não registrado'],
+    ['Versão do contrato', String(aceite.modelo?.versao ?? '—')],
+    ['SHA-256 do texto', aceite.hash],
+  ]) {
+    linha(`${rotulo}: ${valor}`, { tamanho: 8.5, cor: 90, espaco: 3 });
+  }
+  y += 8;
+  linha(
+    `${escolinha.razao_social || escolinha.nome} · emitido em ${new Date().toLocaleDateString('pt-BR')} ` +
+      '· o hash acima identifica o texto aceito; qualquer alteração no texto muda o hash.',
+    { tamanho: 7.5, cor: 124 }
+  );
+
+  doc.save(`contrato-${slug(aceite.aluno_nome)}.pdf`);
+}

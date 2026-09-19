@@ -10,6 +10,8 @@ import * as apiAlunos from '../api/alunos.js';
 import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiFinanceiro from '../api/financeiro.js';
 import * as apiCobranca from '../api/cobranca.js';
+import * as apiContrato from '../api/contrato.js';
+import { useQuery } from '@tanstack/react-query';
 import * as apiFotos from '../api/fotos.js';
 import { situacaoMensalidade, tituloCobranca, valorCobranca, ROTULO_MARCA } from '../lib/constantes.js';
 import {
@@ -296,6 +298,7 @@ function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando, g
           </Linha>
         )}
         <Linha termo="Matrícula">{dataBR(aluno.matriculado_em)}</Linha>
+        {gestor && <LinhaContrato aluno={aluno} />}
         <Linha termo="Uso de imagem">{aluno.autoriza_imagem ? 'Autorizado' : 'Não autorizado'}</Linha>
         <Linha termo="Observações">{aluno.observacoes || '—'}</Linha>
       </dl>
@@ -666,5 +669,41 @@ function Secao({ children }) {
       </span>
       <hr className="flex-1 border-line" />
     </div>
+  );
+}
+
+/* Situação do contrato do atleta, com o PDF do aceite para quem assinou.
+   Só o gestor chega aqui: o aceite tem o CPF do responsável. */
+function LinhaContrato({ aluno }) {
+  const { escolinha } = useSessao();
+  const aceite = useQuery({
+    queryKey: ['contrato-aceite', aluno.id],
+    queryFn: () => apiContrato.aceiteDoAluno(aluno.id),
+  });
+
+  if (aceite.isPending) return null;
+  if (!aceite.data && !escolinha?.exige_contrato) return null;
+
+  const baixar = async () => {
+    const { contratoPDF } = await import('../lib/pdf.js');
+    contratoPDF({ escolinha, aceite: aceite.data });
+  };
+
+  return (
+    <Linha termo="Contrato">
+      {aceite.data ? (
+        <>
+          Aceito em {dataBR(aceite.data.aceito_em)} por {aceite.data.assinante_nome}
+          <button onClick={baixar} className="ml-2 font-semibold text-accent hover:underline">
+            Baixar PDF
+          </button>
+        </>
+      ) : (
+        <>
+          <Tag tom="warn">pendente</Tag>
+          <span className="ml-2 text-ink3">o responsável aceita pelo link dele, logo abaixo</span>
+        </>
+      )}
+    </Linha>
   );
 }
