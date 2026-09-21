@@ -380,3 +380,17 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# ---------------------------------------------------------------
+#  Funções do Asaas
+#  O webhook e a cobrança do link do responsável são chamados sem
+#  login: quem autentica é o token do Asaas e o token do link.
+# ---------------------------------------------------------------
+[functions.asaas-conectar]
+verify_jwt = true
+
+[functions.asaas-cobranca]
+verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false

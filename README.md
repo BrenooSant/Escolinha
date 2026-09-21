@@ -71,6 +71,26 @@ aparece na ficha, em Cobranças, na mensagem do WhatsApp e no link do
 responsável, que paga por **Pix copia e cola com QR code** gerado no próprio
 app e baixa o **recibo** do que já pagou.
 
+### Pagamento pelo link (Asaas)
+
+A escolinha conecta a **conta Asaas dela** em Ajustes, colando a chave de
+API. A partir daí o link do responsável mostra **boleto, Pix e cartão** da
+mensalidade, com a multa, os juros e o desconto que ela configurou — e
+quando o pagamento entra, o webhook dá **baixa sozinho**: mensalidade
+quitada, dinheiro no caixa e o aviso de atraso some da chamada.
+
+O dinheiro cai na conta da escolinha; a plataforma não entra no caminho. O
+Asaas não manda e-mail nem SMS para ninguém: quem mostra a cobrança é o
+link. A cobrança só nasce quando o responsável decide pagar, e a chave fica
+no servidor, numa tabela que nem o gestor lê.
+
+```
+backend/supabase/functions/
+  asaas-conectar/   valida a chave, guarda e registra o webhook
+  asaas-cobranca/   gera (ou reaproveita) a cobrança do link do responsável
+  asaas-webhook/    recebe o evento e dá baixa, sem duplicar
+```
+
 ### Contrato online
 
 O gestor escreve o contrato em Ajustes (vem um modelo de exemplo para
@@ -113,7 +133,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**251 testes.** Os de unidade cobrem as funções puras de formatação e
+**270 testes.** Os de unidade cobrem as funções puras de formatação e
 montam as telas públicas num DOM, para pegar o que o build não pega —
 import faltando, componente indefinido, quebra na primeira pintura.
 
@@ -130,6 +150,10 @@ estar desligada, ou as contas precisam existir antes.
 
 Sem as chaves do Supabase, a suíte de integração é pulada em vez de
 falhar.
+
+Os testes do Asaas rodam contra as funções servidas localmente
+(`supabase functions serve`) e contra um Asaas de mentira, sem chave de
+verdade e sem dinheiro; onde as funções não estiverem no ar, são pulados.
 
 ## Publicação
 

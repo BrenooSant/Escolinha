@@ -5,6 +5,7 @@ import * as apiPortal from '../api/portal.js';
 import { brl, corFreq, dataBR, dataCurta, diaDaSemana, hora } from '../lib/format.js';
 import { tituloCobranca, valorCobranca } from '../lib/constantes.js';
 import { pixCopiaECola } from '../lib/pix.js';
+import * as apiAsaas from '../api/asaas.js';
 import { cpfValido, mascaraDocumento, soDigitos } from '../lib/documento.js';
 import * as apiContrato from '../api/contrato.js';
 
@@ -80,14 +81,22 @@ export default function Portal() {
         />
       )}
 
-      {pagando && (
+      {pagando && (escolinha.aceita_online ? (
+        <PagarOnline
+          token={token}
+          escolinha={escolinha}
+          mensalidade={pagando}
+          onFechar={() => setPagando(null)}
+          onAvisar={() => { setAvisando(pagando); setPagando(null); }}
+        />
+      ) : (
         <PagarPix
           escolinha={escolinha}
           mensalidade={pagando}
           onFechar={() => setPagando(null)}
           onAvisar={() => { setAvisando(pagando); setPagando(null); }}
         />
-      )}
+      ))}
 
       {avisando && (
         <AvisarPagamento
@@ -196,12 +205,14 @@ function Filho({ f, escolinha, responsavel, onAvisar, onPagar, onAssinar }) {
               )}
               {m.status === 'aberta' && !m.avisado_em && (
                 <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-                  {pix ? (
+                  {escolinha.aceita_online ? (
+                    <Btn className="!min-h-9 !text-xs" onClick={() => onPagar(m)}>Pagar</Btn>
+                  ) : pix ? (
                     <Btn className="!min-h-9 !text-xs" onClick={() => onPagar(m)}>Pagar com Pix</Btn>
                   ) : null}
                   <Btn
                     variante="ghost"
-                    className={`!min-h-9 !text-xs ${pix ? '' : 'col-span-2'}`}
+                    className={`!min-h-9 !text-xs ${pix || escolinha.aceita_online ? '' : 'col-span-2'}`}
                     onClick={() => onAvisar(m)}
                   >
                     Já paguei
@@ -366,29 +377,6 @@ function PagarPix({ escolinha, mensalidade, onFechar, onAvisar }) {
     valorCentavos: valor,
     txid: mensalidade.id,
   });
-  const [svg, setSvg] = useState(null);
-  const [copiado, setCopiado] = useState(false);
-
-  useEffect(() => {
-    let vivo = true;
-    import('qrcode-generator').then(({ default: qrcode }) => {
-      const qr = qrcode(0, 'M');
-      qr.addData(codigo);
-      qr.make();
-      if (vivo) setSvg(qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true }));
-    });
-    return () => { vivo = false; };
-  }, [codigo]);
-
-  const copiar = async () => {
-    try {
-      await navigator.clipboard.writeText(codigo);
-      setCopiado(true);
-    } catch {
-      setCopiado(false);
-    }
-  };
-
   return (
     <Sheet aberto onFechar={onFechar} largura="max-w-sm" rotulo="Pagar com Pix">
       <header className="px-5 pt-5">
@@ -400,19 +388,7 @@ function PagarPix({ escolinha, mensalidade, onFechar, onAvisar }) {
         </p>
       </header>
       <div className="space-y-3 p-5 pt-4">
-        {/* O SVG sai da biblioteca a partir do nosso próprio texto. */}
-        <div
-          className="mx-auto aspect-square w-52 rounded-lg bg-white p-1 [&>svg]:size-full"
-          aria-label="QR code do Pix"
-          dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
-        />
-        <p className="text-center text-xs text-ink3">
-          Abra o app do banco, escolha Pix → ler QR code, ou copie o código abaixo.
-        </p>
-        <p className="tnum max-h-20 overflow-y-auto rounded-lg bg-surface2 px-3 py-2 text-[11px] break-all text-ink2">
-          {codigo}
-        </p>
-        <Btn className="w-full" onClick={copiar}>{copiado ? 'Código copiado ✓' : 'Copiar código Pix'}</Btn>
+        <Pix codigo={codigo} />
         <p className="text-center text-xs text-ink3">
           Pagou? Toque em “Já paguei” para avisar a escolinha — ela confere e confirma.
         </p>
@@ -518,6 +494,165 @@ function AssinarContrato({ token, filho, responsavel, onFechar, onPronto }) {
           <Btn disabled={!aceito} carregando={ocupado} onClick={aceitar}>Aceitar</Btn>
         ) : (
           <Btn carregando={ocupado} onClick={ler}>Ler o contrato</Btn>
+        )}
+      </SheetFoot>
+    </Sheet>
+  );
+}
+
+/* QR code e copia e cola, usados pelo Pix da escolinha e pelo Pix que
+   vem do Asaas. O QR é desenhado a partir do próprio código. */
+function Pix({ codigo }) {
+  const [svg, setSvg] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    import('qrcode-generator').then(({ default: qrcode }) => {
+      const qr = qrcode(0, 'M');
+      qr.addData(codigo);
+      qr.make();
+      if (vivo) setSvg(qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true }));
+    });
+    return () => { vivo = false; };
+  }, [codigo]);
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(codigo);
+      setCopiado(true);
+    } catch {
+      setCopiado(false);
+    }
+  };
+
+  return (
+    <>
+      <div
+        className="mx-auto aspect-square w-52 rounded-lg bg-white p-1 [&>svg]:size-full"
+        aria-label="QR code do Pix"
+        dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
+      />
+      <p className="text-center text-xs text-ink3">
+        Abra o app do banco, escolha Pix → ler QR code, ou copie o código abaixo.
+      </p>
+      <p className="tnum max-h-20 overflow-y-auto rounded-lg bg-surface2 px-3 py-2 text-[11px] break-all text-ink2">
+        {codigo}
+      </p>
+      <Btn className="w-full" onClick={copiar}>{copiado ? 'Código copiado ✓' : 'Copiar código Pix'}</Btn>
+    </>
+  );
+}
+
+/* Pagamento pela conta Asaas da escolinha: boleto, Pix e cartão da
+   mensalidade. A cobrança só é criada quando o responsável decide
+   pagar, e quem já pediu antes recebe a mesma de volta. */
+function PagarOnline({ token, escolinha, mensalidade, onFechar, onAvisar }) {
+  const [cobranca, setCobranca] = useState(null);
+  const [precisaCpf, setPrecisaCpf] = useState(false);
+  const [nome, setNome] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [erro, setErro] = useState(null);
+  const [ocupado, setOcupado] = useState(true);
+
+  const pedir = useCallback(
+    async (dados) => {
+      setErro(null);
+      setOcupado(true);
+      try {
+        const r = await apiAsaas.cobrar(token, mensalidade.id, dados);
+        if (r?.precisa_cpf) {
+          setPrecisaCpf(true);
+          setNome((n) => n || r.nome_sugerido || '');
+        } else {
+          setCobranca(r.cobranca);
+          setPrecisaCpf(false);
+        }
+      } catch (e) {
+        setErro(e.message);
+      } finally {
+        setOcupado(false);
+      }
+    },
+    [token, mensalidade.id]
+  );
+
+  useEffect(() => { pedir({}); }, [pedir]);
+
+  const { valor } = valorCobranca(mensalidade);
+
+  return (
+    <Sheet aberto onFechar={onFechar} largura="max-w-sm" rotulo="Pagar">
+      <header className="px-5 pt-5">
+        <h3 className="text-lg">Pagar</h3>
+        <p className="mt-1 text-[13px] text-ink3">
+          <span className="inline-block first-letter:uppercase">{tituloCobranca(mensalidade)}</span> ·{' '}
+          <b className="tnum text-ink">{brl(valor)}</b>
+        </p>
+      </header>
+
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 pt-4">
+        {ocupado && !cobranca && <Carregando texto="Preparando a cobrança…" />}
+
+        {precisaCpf && !cobranca && (
+          <>
+            <p className="text-[13px] text-ink2">
+              O banco exige o nome e o CPF de quem paga para emitir o boleto. É uma vez só.
+            </p>
+            <Field label="Nome completo">
+              <Input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} />
+            </Field>
+            <Field label="CPF">
+              <Input
+                value={cpf}
+                inputMode="numeric"
+                onChange={(e) => setCpf(e.target.value)}
+                onBlur={() => setCpf((c) => mascaraDocumento(c))}
+                placeholder="000.000.000-00"
+              />
+            </Field>
+            <Btn
+              className="w-full"
+              carregando={ocupado}
+              onClick={() => {
+                if (!cpfValido(cpf)) return setErro('CPF inválido — confira os números.');
+                pedir({ cpf: soDigitos(cpf), nome: nome.trim() });
+              }}
+            >
+              Gerar cobrança
+            </Btn>
+          </>
+        )}
+
+        {cobranca && (
+          <>
+            <Btn className="w-full" onClick={() => window.open(cobranca.invoice_url, '_blank')}>
+              Abrir a fatura (cartão, boleto e Pix)
+            </Btn>
+            {cobranca.boleto_url && (
+              <Btn variante="ghost" className="w-full" onClick={() => window.open(cobranca.boleto_url, '_blank')}>
+                Ver o boleto
+              </Btn>
+            )}
+            {cobranca.pix_payload && (
+              <>
+                <hr className="border-line" />
+                <Pix codigo={cobranca.pix_payload} />
+              </>
+            )}
+            <p className="text-center text-xs text-ink3">
+              Assim que o pagamento cair, esta cobrança some daqui sozinha — não precisa avisar.
+            </p>
+          </>
+        )}
+
+        <Alerta>{erro}</Alerta>
+      </div>
+
+      <SheetFoot>
+        <Btn variante="ghost" onClick={onFechar}>Fechar</Btn>
+        {!cobranca && !ocupado && (
+          <Btn variante="ghost" onClick={onAvisar}>Já paguei</Btn>
         )}
       </SheetFoot>
     </Sheet>
