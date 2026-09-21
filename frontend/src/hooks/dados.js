@@ -14,6 +14,7 @@ import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiEquipe from '../api/equipe.js';
 import * as apiCobranca from '../api/cobranca.js';
 import * as apiLeads from '../api/leads.js';
+import * as apiAsaas from '../api/asaas.js';
 
 const ativo = (id) => ({ enabled: Boolean(id) });
 
@@ -197,6 +198,15 @@ export function useAcao(fn, { sucesso } = {}) {
 }
 
 /* Regras de cobrança e planos: só o gestor pede, então só roda para ele. */
+export function useConexaoAsaas() {
+  const { escolinhaId, gestor } = useSessao();
+  return useQuery({
+    queryKey: ['asaas', escolinhaId],
+    queryFn: () => apiAsaas.conexao(escolinhaId),
+    ...ativo(escolinhaId && gestor),
+  });
+}
+
 export function useLeads() {
   const { escolinhaId, gestor } = useSessao();
   return useQuery({

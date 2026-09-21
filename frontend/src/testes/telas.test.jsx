@@ -69,6 +69,10 @@ vi.mock('../api/contrato.js', () => ({
   aceitarPortal: vi.fn(),
 }));
 
+vi.mock('../api/asaas.js', () => ({
+  cobrar: vi.fn(),
+}));
+
 vi.mock('../api/leads.js', () => ({
   registrarInteresse: vi.fn(),
 }));
@@ -88,6 +92,7 @@ import SemConfiguracao from '../views/SemConfiguracao.jsx';
 import * as apiMatriculas from '../api/matriculas.js';
 import * as apiPortal from '../api/portal.js';
 import * as apiContrato from '../api/contrato.js';
+import * as apiAsaas from '../api/asaas.js';
 import * as apiAuth from '../api/auth.js';
 import * as apiEscolinha from '../api/escolinha.js';
 
@@ -322,6 +327,55 @@ describe('portal do responsável', () => {
     expect(await screen.findByText(/contrato de matrícula pendente/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /ler e aceitar/i }));
     expect(await screen.findByLabelText(/seu cpf/i)).toBeInTheDocument();
+  });
+
+  it('com a conta conectada, "Pagar" pede o CPF e depois traz boleto e Pix', async () => {
+    apiPortal.abrir.mockResolvedValue({
+      ...dados,
+      escolinha: { ...dados.escolinha, aceita_online: true },
+      filhos: [{ ...dados.filhos[0], id: 'a1' }],
+    });
+    apiAsaas.cobrar
+      .mockResolvedValueOnce({ precisa_cpf: true, nome_sugerido: 'Vanessa Duarte' })
+      .mockResolvedValueOnce({
+        cobranca: {
+          invoice_url: 'https://asaas/i/1', boleto_url: 'https://asaas/b/1',
+          pix_payload: '000201-PIX', valor_centavos: 13000,
+        },
+      });
+    montar(<Portal />, { rota: '/portal/abc123' });
+
+    await screen.findByRole('heading', { name: 'Helena Duarte' });
+    fireEvent.click(screen.getByRole('button', { name: /^pagar$/i }));
+
+    const cpf = await screen.findByLabelText(/^cpf$/i);
+    fireEvent.change(cpf, { target: { value: '529.982.247-25' } });
+    fireEvent.click(screen.getByRole('button', { name: /gerar cobrança/i }));
+
+    expect(await screen.findByRole('button', { name: /abrir a fatura/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ver o boleto/i })).toBeInTheDocument();
+    expect(apiAsaas.cobrar).toHaveBeenLastCalledWith('abc123', 'm1', {
+      cpf: '52998224725', nome: 'Vanessa Duarte',
+    });
+  });
+
+  it('CPF inválido não gera cobrança', async () => {
+    apiPortal.abrir.mockResolvedValue({
+      ...dados,
+      escolinha: { ...dados.escolinha, aceita_online: true },
+      filhos: [{ ...dados.filhos[0], id: 'a1' }],
+    });
+    apiAsaas.cobrar.mockReset();
+    apiAsaas.cobrar.mockResolvedValue({ precisa_cpf: true, nome_sugerido: 'Vanessa Duarte' });
+    montar(<Portal />, { rota: '/portal/abc123' });
+
+    await screen.findByRole('heading', { name: 'Helena Duarte' });
+    fireEvent.click(screen.getByRole('button', { name: /^pagar$/i }));
+    fireEvent.change(await screen.findByLabelText(/^cpf$/i), { target: { value: '111.111.111-11' } });
+    fireEvent.click(screen.getByRole('button', { name: /gerar cobrança/i }));
+
+    expect(await screen.findByText(/cpf inválido/i)).toBeInTheDocument();
+    expect(apiAsaas.cobrar).toHaveBeenCalledTimes(1);
   });
 
   it('link inválido não mostra dado nenhum', async () => {

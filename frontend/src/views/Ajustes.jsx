@@ -16,6 +16,7 @@ import { documentoValido, mascaraDocumento, soDigitos } from '../lib/documento.j
 import LinkMatricula from './LinkMatricula.jsx';
 import RegrasCobranca from './RegrasCobranca.jsx';
 import ContratoAjustes from './ContratoAjustes.jsx';
+import PagamentoOnline from './PagamentoOnline.jsx';
 
 export default function Ajustes() {
   const { gestor } = useSessao();
@@ -41,6 +42,7 @@ export default function Ajustes() {
       <div className="space-y-4">
         <DadosEscolinha />
         <RegrasCobranca />
+        <PagamentoOnline />
         <ContratoAjustes />
         <LinkMatricula />
         <Turmas />
