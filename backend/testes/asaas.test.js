@@ -14,11 +14,17 @@ const FUNCOES = `${URL_SUPABASE}/functions/v1`;
 const ASAAS_FALSO = process.env.ASAAS_FALSO ?? 'http://127.0.0.1:8899';
 const CHAVE = '$aact_hmlg_teste123456789';
 
+/* Só rodam onde existe o par completo: as funções servidas localmente e
+   o Asaas de mentira. Contra a nuvem (ou no CI) são pulados — lá as
+   funções falam com o Asaas de verdade, e chave de teste não vale. */
 const noAr = async () => {
   if (!configurado) return false;
   try {
-    const r = await fetch(`${FUNCOES}/asaas-webhook`, { method: 'POST' });
-    return r.status === 401; // sem token: é a função respondendo
+    const [funcao, falso] = await Promise.all([
+      fetch(`${FUNCOES}/asaas-webhook`, { method: 'POST' }),
+      fetch(`${ASAAS_FALSO}/__estado`),
+    ]);
+    return funcao.status === 401 && falso.ok;
   } catch {
     return false;
   }
