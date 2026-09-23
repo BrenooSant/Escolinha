@@ -149,7 +149,15 @@ contas são criadas sozinhas; para isso a confirmação de e-mail precisa
 estar desligada, ou as contas precisam existir antes.
 
 Sem as chaves do Supabase, a suíte de integração é pulada em vez de
-falhar.
+falhar — é o que deixa o projeto rodar num clone qualquer, sem conta no
+Supabase. **No CI, não**: lá faltar chave é erro, e o job quebra dizendo
+quais secrets cadastrar. Um check verde que não rodou nada é pior que um
+vermelho: ele afirma que a RLS foi conferida quando ninguém conferiu.
+
+Os secrets que o workflow espera são `VITE_SUPABASE_URL` e
+`VITE_SUPABASE_ANON_KEY` (e, para contas de teste próprias, `TESTE_EMAIL`,
+`TESTE_EMAIL_2` e `TESTE_SENHA`). Em pull request vindo de fork o job nem
+roda, porque o GitHub não expõe secret para fork.
 
 Os testes do Asaas rodam contra as funções servidas localmente
 (`supabase functions serve`) e contra um Asaas de mentira, sem chave de
