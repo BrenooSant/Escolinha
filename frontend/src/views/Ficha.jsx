@@ -3,7 +3,8 @@ import {
   Alerta, Btn, Confirmar, Erro, Esqueleto, Field, Foto, Input, Sheet, SheetFoot, Tag, Vazio, useToast,
 } from '../ui.jsx';
 import {
-  useAcao, useAvaliacoes, useHistoricoAluno, useMensalidadesDoAluno, useResponsavel,
+  useAcao, useAvaliacoes, useHistoricoAluno, useLiberacoesAluno, useMensalidadesDoAluno,
+  useResponsavel,
 } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import * as apiAlunos from '../api/alunos.js';
@@ -303,6 +304,8 @@ function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando, g
         <Linha termo="Observações">{aluno.observacoes || '—'}</Linha>
       </dl>
 
+      {gestor && <Liberacoes aluno={aluno} />}
+
       {/* o portal mostra as mensalidades: o link é coisa do gestor */}
       {gestor && <LinkDoResponsavel aluno={aluno} />}
 
@@ -315,6 +318,29 @@ function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando, g
           Reativar atleta
         </Btn>
       )}
+    </>
+  );
+}
+
+/* Treinos em que o atleta entrou devendo, com o motivo de quem liberou.
+   Some quando não houve nenhuma — é a exceção, não uma seção fixa. */
+function Liberacoes({ aluno }) {
+  const consulta = useLiberacoesAluno(aluno.id);
+  if (!consulta.data?.length) return null;
+
+  return (
+    <>
+      <Secao>Liberações com mensalidade em atraso</Secao>
+      <ul className="mb-5 space-y-2">
+        {consulta.data.map((l) => (
+          <li key={l.id} className="rounded-lg bg-surface2 px-3 py-2 text-[12.5px]">
+            <b className="tnum font-semibold">
+              {l.treino?.data ? dataBR(l.treino.data) : dataBR(l.criado_em.slice(0, 10))}
+            </b>
+            <span className="text-ink2"> · {l.motivo}</span>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }
