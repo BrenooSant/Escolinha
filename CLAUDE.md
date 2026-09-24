@@ -134,9 +134,16 @@ fica verde depois que o schema sobe**. Vermelho nesse caso costuma significar
 Nada de valor sorteado em teste — nem número de camisa, nem nome. Colide de vez
 em quando e produz vermelho aleatório, que ensina a ignorar vermelho.
 
-Os testes do Asaas exigem `supabase functions serve` no ar mais um servidor
-falso do Asaas em `127.0.0.1:8899` (não versionado, endereço trocável por
-`ASAAS_FALSO`); sem os dois, são pulados — inclusive no CI.
+Os testes do Asaas exigem o Supabase local, o **Asaas de mentira**
+(`npm run asaas:falso`, em `backend/testes/asaas-falso.mjs`) e as funções
+servidas apontando para ele (`npm run funcoes:servir`). Sem os três, são
+pulados.
+
+A pegadinha: as Edge Functions rodam **em container**, então para elas este
+computador é `host.docker.internal`, não `127.0.0.1` — que lá dentro é o
+loopback do próprio container e recusa a conexão. `backend/testes/funcoes.env`
+resolve isso no Mac; no Linux o nome não existe e vale o gateway da bridge
+do Docker, que o workflow calcula.
 
 ## Migrations e produção
 
