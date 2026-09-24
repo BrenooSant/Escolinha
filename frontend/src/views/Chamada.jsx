@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Alerta, Barra, Btn, Erro, Esqueleto, Foto, Panel, Select, Tag, Vazio, useToast,
+  Alerta, Barra, Btn, Erro, Esqueleto, Field, Foto, Panel, Select, Sheet, SheetFoot, Tag,
+  Textarea, Vazio, useToast,
 } from '../ui.jsx';
 import { PageHead } from '../Shell.jsx';
+import { useSessao } from '../estado/Sessao.jsx';
 import { useAcao, useAgenda, useChamada, useTreinosDaTurma } from '../hooks/dados.js';
 import * as apiChamada from '../api/chamada.js';
 import { ICONE_MARCA, MARCA_CURTA, MOTIVOS, ROTULO_MARCA } from '../lib/constantes.js';
-import { corFreq, dataCurta, diaDaSemana, hojeISO, hora, paraISO } from '../lib/format.js';
+import { corFreq, dataCurta, diaDaSemana, hojeISO, hora, paraISO, primeiroNome } from '../lib/format.js';
 
 /* Rascunho da chamada.
 
@@ -165,6 +167,7 @@ function EscolherTreino() {
 function Marcacao({ treinoId }) {
   const navegar = useNavigate();
   const toast = useToast();
+  const { gestor } = useSessao();
   const consulta = useChamada(treinoId);
 
   const [marcas, setMarcas] = useState({});
@@ -172,6 +175,7 @@ function Marcacao({ treinoId }) {
   const [erro, setErro] = useState(null);
   const [sujo, setSujo] = useState(false);
   const [recuperado, setRecuperado] = useState(false);
+  const [liberando, setLiberando] = useState(null);
 
   /* Parte do que já está gravado; enquanto o professor não mexer, um
      refetch pode reescrever sem perigo. Se houver rascunho de uma
@@ -223,6 +227,8 @@ function Marcacao({ treinoId }) {
 
   const treino = consulta.data?.treino;
   const elenco = consulta.data?.elenco ?? [];
+  const modo = consulta.data?.modoBloqueio ?? 'avisar';
+  const bloqueados = elenco.filter((a) => a.bloqueado && !a.liberacao).length;
   const historico = useTreinosDaTurma(treino?.turma_id, treino?.data);
 
   const placar = useMemo(() => {
@@ -246,15 +252,39 @@ function Marcacao({ treinoId }) {
 
   const total = elenco.length || 1;
 
+  /* O banco recusa presença de atleta bloqueado — a tela só antecipa a
+     recusa, para o professor não marcar 20 atletas e descobrir no fim.
+     Falta e justificada passam direto: elas dizem que ele não treinou,
+     que é o que o bloqueio quer. */
+  const travado = (a) => a.bloqueado && !a.liberacao;
+
   const marcar = (id, valor) => {
+    const a = elenco.find((x) => x.id === id);
+    if (valor === 'P' && a && travado(a)) {
+      if (modo === 'impedir') {
+        toast(`${primeiroNome(a.nome)} está com mensalidade em atraso`);
+      } else if (gestor) {
+        setLiberando(a);
+      } else {
+        toast(`${primeiroNome(a.nome)} está bloqueado — só o gestor libera`);
+      }
+      return;
+    }
     setSujo(true);
     setMarcas((m) => ({ ...m, [id]: valor }));
   };
 
   const todosPresentes = () => {
     setSujo(true);
-    setMarcas(Object.fromEntries(elenco.map((a) => [a.id, 'P'])));
-    toast('Todos presentes — agora ajuste quem faltou');
+    const livres = elenco.filter((a) => !travado(a));
+    setMarcas(Object.fromEntries(livres.map((a) => [a.id, 'P'])));
+    toast(
+      livres.length === elenco.length
+        ? 'Todos presentes — agora ajuste quem faltou'
+        : `${livres.length} presentes · ${elenco.length - livres.length} bloqueado${
+            elenco.length - livres.length > 1 ? 's' : ''
+          } de fora`
+    );
   };
 
   const limpar = () => {
@@ -310,6 +340,21 @@ function Marcacao({ treinoId }) {
         <div className="mb-3.5">
           <Alerta tom="ok">
             Esta chamada já foi salva. Alterar aqui recalcula a frequência dos atletas.
+          </Alerta>
+        </div>
+      )}
+
+      {bloqueados > 0 && (
+        <div className="mb-3.5">
+          <Alerta tom="warn">
+            {bloqueados === 1 ? 'Um atleta está' : `${bloqueados} atletas estão`} com a mensalidade
+            em atraso e não {bloqueados === 1 ? 'pode' : 'podem'} ser marcado
+            {bloqueados === 1 ? '' : 's'} presente{bloqueados === 1 ? '' : 's'}.{' '}
+            {modo === 'impedir'
+              ? 'Regularize a mensalidade para liberar.'
+              : gestor
+                ? 'Toque em Presente para liberar com um motivo.'
+                : 'Só o gestor pode liberar.'}
           </Alerta>
         </div>
       )}
@@ -376,6 +421,7 @@ function Marcacao({ treinoId }) {
               <Atleta
                 key={a.id}
                 a={a}
+                travado={travado(a)}
                 marca={marcas[a.id] || ''}
                 motivo={motivos[a.id]}
                 onMarcar={marcar}
@@ -387,6 +433,17 @@ function Marcacao({ treinoId }) {
       </Panel>
 
       {erro && <div className="mt-3"><Alerta>{erro}</Alerta></div>}
+
+      <LiberarAtleta
+        aluno={liberando}
+        treinoId={treinoId}
+        onFechar={() => setLiberando(null)}
+        aoLiberar={(id) => {
+          setLiberando(null);
+          setSujo(true);
+          setMarcas((m) => ({ ...m, [id]: 'P' }));
+        }}
+      />
 
       <Panel className="mt-4" titulo="Últimas chamadas desta turma" extra={<Tag>{treino.turma_nome}</Tag>}>
         {historico.isPending ? (
@@ -420,7 +477,7 @@ function Marcacao({ treinoId }) {
   );
 }
 
-function Atleta({ a, marca, motivo, onMarcar, onMotivo }) {
+function Atleta({ a, travado, marca, motivo, onMarcar, onMotivo }) {
   return (
     <li
       className={`flex flex-wrap items-center gap-x-3 gap-y-3 border-b border-l-[3px] border-b-line p-3 last:border-b-0 ${
@@ -432,7 +489,18 @@ function Atleta({ a, marca, motivo, onMarcar, onMotivo }) {
       <div className="min-w-0 flex-1">
         <b className="block truncate text-[13.5px] font-semibold">{a.nome}</b>
         <small className="text-xs text-ink3">{a.posicao || '—'}</small>
-        {a.em_atraso && <Tag tom="bad" className="ml-2">Pagamento em atraso</Tag>}
+        {travado ? (
+          <Tag tom="bad" className="ml-2">Bloqueado</Tag>
+        ) : a.liberacao ? (
+          <Tag tom="warn" className="ml-2">Liberado</Tag>
+        ) : (
+          a.em_atraso && <Tag tom="bad" className="ml-2">Pagamento em atraso</Tag>
+        )}
+        {/* Tag é whitespace-nowrap: um motivo de 200 caracteres dentro
+            dela estouraria a linha no celular. Aqui embaixo, quebra. */}
+        {a.liberacao && !travado && (
+          <small className="mt-1 block text-[11px] text-ink3">{a.liberacao.motivo}</small>
+        )}
         {a.frequencia != null && (
           <div className="mt-1.5 flex max-w-52 items-center gap-2">
             <span className="h-1 flex-1 overflow-hidden rounded-full bg-surface2">
@@ -450,27 +518,41 @@ function Atleta({ a, marca, motivo, onMarcar, onMotivo }) {
 
       {/* No celular ocupa a linha inteira; no desktop fica à direita. */}
       <div className="grid w-full grid-cols-3 overflow-hidden rounded-xl border border-line sm:flex sm:w-auto sm:rounded-lg">
-        {['P', 'F', 'J'].map((v) => (
-          <button
-            key={v}
-            type="button"
-            aria-pressed={marca === v}
-            aria-label={`${ROTULO_MARCA[v]}: ${a.nome}`}
-            onClick={() => onMarcar(a.id, marca === v ? '' : v)}
-            className={`flex min-h-11 items-center justify-center gap-1.5 border-r border-line text-xs font-semibold transition last:border-r-0 sm:px-3.5 ${
-              marca === v ? ATIVO[v] : 'text-ink3 hover:bg-surface2 hover:text-ink'
-            }`}
-          >
-            <i
-              className={`grid size-4 place-items-center rounded-full border-[1.5px] border-current text-[9px] not-italic ${
-                marca === v ? 'bg-white/20' : 'opacity-55'
+        {['P', 'F', 'J'].map((v) => {
+          /* O cadeado continua clicável: é o toque que explica por que
+             não dá, e é por ele que o gestor abre a liberação. Botão
+             morto só faria o professor achar que a tela travou. */
+          const preso = travado && v === 'P';
+          return (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={marca === v}
+              aria-label={
+                preso
+                  ? `${ROTULO_MARCA[v]}: ${a.nome} — bloqueado por mensalidade em atraso`
+                  : `${ROTULO_MARCA[v]}: ${a.nome}`
+              }
+              onClick={() => onMarcar(a.id, marca === v ? '' : v)}
+              className={`flex min-h-11 items-center justify-center gap-1.5 border-r border-line text-xs font-semibold transition last:border-r-0 sm:px-3.5 ${
+                marca === v
+                  ? ATIVO[v]
+                  : preso
+                    ? 'text-bad/55 hover:bg-badbg'
+                    : 'text-ink3 hover:bg-surface2 hover:text-ink'
               }`}
             >
-              {ICONE_MARCA[v]}
-            </i>
-            {MARCA_CURTA[v]}
-          </button>
-        ))}
+              <i
+                className={`grid size-4 place-items-center rounded-full border-[1.5px] border-current text-[9px] not-italic ${
+                  marca === v ? 'bg-white/20' : 'opacity-55'
+                }`}
+              >
+                {preso ? '🔒' : ICONE_MARCA[v]}
+              </i>
+              {MARCA_CURTA[v]}
+            </button>
+          );
+        })}
       </div>
 
       {marca === 'J' && (
@@ -485,5 +567,82 @@ function Atleta({ a, marca, motivo, onMarcar, onMotivo }) {
         </Select>
       )}
     </li>
+  );
+}
+
+/* ---------------------------------------------------------------
+   Liberar um atleta bloqueado
+   Só o gestor chega aqui — o professor recebe o aviso e segue. O
+   motivo é obrigatório porque é ele que a ficha vai mostrar depois:
+   uma liberação sem motivo não explica nada a ninguém.
+   --------------------------------------------------------------- */
+function LiberarAtleta({ aluno, treinoId, onFechar, aoLiberar }) {
+  const toast = useToast();
+  const [motivo, setMotivo] = useState('');
+  const [erro, setErro] = useState(null);
+
+  const liberar = useAcao((texto) => apiChamada.liberar(treinoId, aluno.id, texto));
+
+  /* Cada atleta abre a folha limpa — senão o motivo do anterior fica. */
+  useEffect(() => {
+    setMotivo('');
+    setErro(null);
+  }, [aluno?.id]);
+
+  const enviar = (e) => {
+    e.preventDefault();
+    setErro(null);
+    const texto = motivo.trim();
+    if (texto.length < 3) return setErro('Escreva o motivo — ele fica na ficha do atleta.');
+
+    liberar.mutate(texto, {
+      onSuccess: () => {
+        toast(`${primeiroNome(aluno.nome)} liberado para este treino`);
+        aoLiberar(aluno.id);
+      },
+      onError: (err) => setErro(err.message),
+    });
+  };
+
+  return (
+    <Sheet
+      aberto={Boolean(aluno)}
+      onFechar={onFechar}
+      largura="max-w-md"
+      rotulo="Liberar atleta bloqueado"
+    >
+      {aluno && (
+        <form onSubmit={enviar}>
+          <div className="px-5 pt-5 pb-1">
+            <h3 className="text-lg">Liberar {primeiroNome(aluno.nome)}?</h3>
+            <p className="mt-1.5 text-[13px] text-ink3">
+              A mensalidade está em atraso. A liberação vale só para o treino de hoje — no
+              próximo, o bloqueio volta enquanto a mensalidade não for paga.
+            </p>
+
+            <div className="mt-4">
+              <Field
+                label="Motivo"
+                dica="Fica registrado com o seu nome e a data, na ficha do atleta."
+                erro={erro}
+              >
+                <Textarea
+                  rows={3}
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  maxLength={200}
+                  autoFocus
+                  placeholder="O pai disse que paga na sexta"
+                />
+              </Field>
+            </div>
+          </div>
+          <SheetFoot>
+            <Btn variante="ghost" type="button" onClick={onFechar}>Cancelar</Btn>
+            <Btn type="submit" carregando={liberar.isPending}>Liberar e marcar presente</Btn>
+          </SheetFoot>
+        </form>
+      )}
+    </Sheet>
   );
 }

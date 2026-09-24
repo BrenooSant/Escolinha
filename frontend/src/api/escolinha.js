@@ -10,7 +10,7 @@ export async function minhasEscolinhas() {
   const linhas = await exec(
     supabase
       .from('membros')
-      .select('papel, escolinha:escolinhas(id, nome, cidade, local_padrao, chave_pix, razao_social, documento, dia_vencimento, tolerancia_atraso, codigo_matricula, matriculas_abertas, exige_contrato)')
+      .select('papel, escolinha:escolinhas(id, nome, cidade, local_padrao, chave_pix, razao_social, documento, dia_vencimento, tolerancia_atraso, bloqueio_inadimplencia, dias_bloqueio, codigo_matricula, matriculas_abertas, exige_contrato)')
       .eq('perfil_id', session.user.id)
       .order('criado_em', { ascending: true })
   );
