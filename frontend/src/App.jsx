@@ -17,6 +17,7 @@ import Financeiro from './views/Financeiro.jsx';
 import Cobrancas from './views/Cobrancas.jsx';
 import PreMatriculas from './views/PreMatriculas.jsx';
 import Leads from './views/Leads.jsx';
+import Mensagens from './views/Mensagens.jsx';
 import Interesse from './views/Interesse.jsx';
 import Relatorios from './views/Relatorios.jsx';
 import Ajustes from './views/Ajustes.jsx';
@@ -63,6 +64,7 @@ export default function App() {
               <Route path="/cobrancas" element={soGestor('/cobrancas', <Cobrancas />)} />
               <Route path="/matriculas" element={soGestor('/matriculas', <PreMatriculas />)} />
               <Route path="/leads" element={soGestor('/leads', <Leads />)} />
+              <Route path="/mensagens" element={soGestor('/mensagens', <Mensagens />)} />
               <Route path="/relatorios" element={soGestor('/relatorios', <Relatorios />)} />
               <Route path="/ajustes" element={<Ajustes />} />
               <Route path="*" element={<Navigate to="/" replace />} />
