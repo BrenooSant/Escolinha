@@ -91,6 +91,16 @@ export function useModelosMensagem() {
   });
 }
 
+/* Treinos em que o gestor liberou o atleta bloqueado. Fica na ficha,
+   que é onde o gestor revisa depois com calma. */
+export function useLiberacoesAluno(alunoId) {
+  return useQuery({
+    queryKey: ['liberacoes', alunoId],
+    queryFn: () => apiChamada.liberacoesDoAluno(alunoId),
+    ...ativo(alunoId)
+  });
+}
+
 export function useChamada(treinoId) {
   return useQuery({
     queryKey: ['chamada', treinoId],
@@ -209,7 +219,7 @@ export function useAcao(fn, { sucesso } = {}) {
         predicate: (q) =>
           q.queryKey.includes(escolinhaId) ||
           ['chamada', 'historico', 'treinos-turma', 'avaliacoes', 'mensalidades-aluno',
-            'responsavel', 'leads-notas', 'contrato-aceite'].includes(
+            'responsavel', 'leads-notas', 'contrato-aceite', 'liberacoes'].includes(
             q.queryKey[0]
           ),
       });

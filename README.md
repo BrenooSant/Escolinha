@@ -46,7 +46,7 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 |---|---|
 | **Painel** | Números do mês, pendências reais (chamada não feita, mensalidade vencida, ficha esperando) e relatório em PDF |
 | **Agenda** | Semana de treinos e amistosos; gera os treinos automaticamente pela grade das turmas |
-| **Chamada** | Escolhe o treino, marca P/F/J com motivo e fecha — a frequência é recalculada no banco |
+| **Chamada** | Escolhe o treino, marca P/F/J com motivo e fecha — a frequência é recalculada no banco. Atleta em atraso pode aparecer bloqueado |
 | **Alunos** | Ficha completa com foto, histórico de presença, responsável e situação da mensalidade |
 | **Financeiro** | Entradas × saídas dos últimos 6 meses, lançamentos de caixa, mensalidades por turma |
 | **Cobranças** | Vencidas, a vencer e pagas; lembrete pronto que abre no WhatsApp e fica registrado |
@@ -65,6 +65,7 @@ Cada escolinha liga só o que usa — tudo nasce desligado:
 - **Desconto de irmão**, do segundo filho do mesmo responsável em diante
 - **Taxa de matrícula**, cobrada uma vez e mostrada no link de matrícula
 - **Cobranças avulsas** (uniforme, campeonato) lançadas na ficha do atleta
+- **Bloqueio do atleta em atraso**, depois dos dias que o gestor escolher
 
 As regras são copiadas para cada cobrança quando ela nasce — mudar a multa
 hoje não altera o que já foi cobrado. O valor do dia (com desconto ou multa)
@@ -152,6 +153,25 @@ a recorrente (aluguel, salário) já deixa a do mês seguinte lançada.
   que aparece também no link do responsável depois da tolerância que o gestor
   configura em Ajustes.
 
+### Atleta em atraso na chamada
+
+O aviso é o primeiro degrau; a escolinha escolhe em Ajustes se quer ir além, e
+tudo nasce em **só avisar** — quem não mexer não vê diferença nenhuma.
+
+- **Só avisar** — a tag aparece, o atleta treina normalmente
+- **Bloquear, e o gestor libera com um motivo** — o professor não marca
+  presença; o gestor libera aquele treino escrevendo o porquê, que fica
+  registrado com o nome dele na ficha do atleta
+- **Bloquear, sem liberação** — nem o gestor marca; só regularizando
+
+Falta e justificada passam em qualquer modo: elas já dizem que o atleta não
+treinou, e recusá-las travaria a chamada da turma inteira por causa de quem
+nem apareceu. A liberação vale para **um treino só** — no seguinte, o bloqueio
+volta enquanto a mensalidade não for paga, e some no instante em que for.
+
+A recusa mora no `salvar_chamada`, não na tela: o professor não lê
+mensalidades, então a tela dele nunca saberia sozinha quem está devendo.
+
 ## Testes
 
 ```bash
@@ -160,7 +180,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**301 testes.** Os de unidade cobrem as funções puras de formatação e
+**327 testes.** Os de unidade cobrem as funções puras de formatação e
 montam telas num DOM — as públicas e as que têm lógica própria no
 navegador — para pegar o que o build não pega: import faltando,
 componente indefinido, quebra na primeira pintura.

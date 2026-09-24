@@ -73,6 +73,19 @@ function DadosEscolinha() {
     if (documento && !documentoValido(documento)) {
       return setErro('CNPJ ou CPF inválido — confira os números.');
     }
+    const tolerancia = Number(f.get('tolerancia_atraso'));
+    const modo = f.get('bloqueio_inadimplencia');
+    const dias = Number(f.get('dias_bloqueio'));
+
+    /* O banco tem a mesma regra como constraint, mas a mensagem dele é
+       crua. Barrar aqui é o que o gestor consegue entender e corrigir. */
+    if (modo !== 'avisar' && dias < tolerancia) {
+      return setErro(
+        `O bloqueio não pode vir antes do aviso: avisando em ${tolerancia} dias, ` +
+          `bloqueie em ${tolerancia} ou mais.`
+      );
+    }
+
     salvar.mutate(
       {
         nome: f.get('nome').trim(),
@@ -82,7 +95,9 @@ function DadosEscolinha() {
         local_padrao: f.get('local_padrao').trim() || null,
         chave_pix: f.get('chave_pix').trim() || null,
         dia_vencimento: Number(f.get('dia_vencimento')),
-        tolerancia_atraso: Number(f.get('tolerancia_atraso')),
+        tolerancia_atraso: tolerancia,
+        bloqueio_inadimplencia: modo,
+        dias_bloqueio: dias,
       },
       { onError: (err) => setErro(err.message) }
     );
@@ -131,6 +146,29 @@ function DadosEscolinha() {
               <option key={d} value={d}>
                 {d === 0 ? 'Logo depois do vencimento' : `${d} dias depois do vencimento`}
               </option>
+            ))}
+          </Select>
+        </Field>
+        <Field
+          label="Atleta em atraso na chamada"
+          dica="O aviso acima continua valendo em qualquer opção. Aqui é o que acontece quando o professor tenta marcar presença."
+        >
+          <Select
+            name="bloqueio_inadimplencia"
+            defaultValue={escolinha.bloqueio_inadimplencia ?? 'avisar'}
+          >
+            <option value="avisar">Só avisar — pode treinar normalmente</option>
+            <option value="liberar_com_motivo">Bloquear, e o gestor libera com um motivo</option>
+            <option value="impedir">Bloquear, sem liberação</option>
+          </Select>
+        </Field>
+        <Field
+          label="Bloquear depois de"
+          dica="Contado do vencimento. Pagou, o bloqueio sai na hora."
+        >
+          <Select name="dias_bloqueio" defaultValue={String(escolinha.dias_bloqueio ?? 30)}>
+            {[7, 10, 15, 20, 30, 45, 60, 90].map((d) => (
+              <option key={d} value={d}>{d} dias de atraso</option>
             ))}
           </Select>
         </Field>
