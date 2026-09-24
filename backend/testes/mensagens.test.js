@@ -236,11 +236,15 @@ describe.skipIf(!configurado)('mensagens', () => {
 
   describe('enviar', () => {
     let aluno, mens;
+    /* Cada caso precisa de um atleta novo, e a camisa é única na turma.
+       Número sorteado colide de vez em quando — o que dá um teste que
+       falha sozinho, pior que teste nenhum. Contador resolve. */
+    let camisa = 50;
 
     beforeEach(async () => {
       aluno = await novoAluno(gestor, {
         escolinhaId: esc.id, turmaId: turma.id, nome: 'Lucas Dias',
-        numero: 30 + Math.floor(Math.random() * 60), responsavel_id: resp.id,
+        numero: camisa++, responsavel_id: resp.id,
       });
       mens = await mensalidade(aluno, emDias(-5));
       await ligar('lembrete_atrasado', 5);
