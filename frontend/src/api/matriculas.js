@@ -24,18 +24,6 @@ export async function pendentes(escolinhaId) {
   );
 }
 
-export async function decididas(escolinhaId, limite = 30) {
-  return exec(
-    supabase
-      .from('pre_matriculas')
-      .select('*, turma:turmas(id, nome)')
-      .eq('escolinha_id', escolinhaId)
-      .neq('status', 'pendente')
-      .order('decidida_em', { ascending: false })
-      .limit(limite)
-  );
-}
-
 export async function aprovar(id, { turmaId, numero } = {}) {
   return rpc('aprovar_pre_matricula', {
     p_id: id,

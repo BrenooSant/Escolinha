@@ -12,6 +12,8 @@
     "db:reset": "supabase --workdir backend db reset",
     "db:push": "supabase --workdir backend db push",
     "db:diff": "supabase --workdir backend db diff",
+    "asaas:falso": "node backend/testes/asaas-falso.mjs",
+    "funcoes:servir": "supabase --workdir backend functions serve --env-file backend/testes/funcoes.env",
     "test": "npm run test:unidade && npm run test:banco",
     "test:unidade": "npm --prefix frontend run test",
     "test:banco": "npm --prefix backend/testes run test"
