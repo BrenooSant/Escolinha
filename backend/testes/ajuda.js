@@ -39,6 +39,26 @@ export const ANON_KEY = pega('SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY');
 
 export const configurado = Boolean(URL_SUPABASE && ANON_KEY);
 
+/* Sem chave, a suíte é pulada em vez de falhar: é o que deixa o projeto
+   rodar num clone qualquer, sem conta no Supabase.
+
+   Em CI essa gentileza vira mentira. O job passa em treze segundos sem
+   ter executado um único teste, e o check verde ao lado do pull request
+   diz que a RLS foi conferida quando ninguém conferiu nada. Foi o que
+   aconteceu aqui desde o primeiro dia: `14 skipped (14)`, sempre verde.
+
+   Então lá, faltar chave é erro. Na máquina de quem clonou, continua
+   sendo só um pulo. */
+if (!configurado && process.env.CI) {
+  throw new Error(
+    'Testes de integração sem chave do Supabase.\n' +
+      'Em CI eles não podem ser pulados — um check verde que não rodou nada\n' +
+      'é pior que um vermelho. Cadastre os secrets do repositório:\n' +
+      '  VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY\n' +
+      '(e, se quiser contas de teste próprias, TESTE_EMAIL, TESTE_EMAIL_2 e TESTE_SENHA).'
+  );
+}
+
 const CONTAS = {
   dono: pega('TESTE_EMAIL') ?? 'escolinha.teste.claude@gmail.com',
   colega: pega('TESTE_EMAIL_2') ?? 'escolinha.teste2.claude@gmail.com',
