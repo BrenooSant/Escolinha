@@ -15,6 +15,7 @@ import * as apiEquipe from '../api/equipe.js';
 import * as apiCobranca from '../api/cobranca.js';
 import * as apiLeads from '../api/leads.js';
 import * as apiAsaas from '../api/asaas.js';
+import * as apiMensagens from '../api/mensagens.js';
 
 const ativo = (id) => ({ enabled: Boolean(id) });
 
@@ -70,13 +71,33 @@ export function useTreinosDaTurma(turmaId, ate) {
   });
 }
 
+/* Fila e modelos de mensagem. A chave leva a escolinha, então o
+   invalidar de useAcao já alcança as duas sem lista especial. */
+export function useFilaMensagens(status = 'pendente') {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['fila-mensagens', escolinhaId, status],
+    queryFn: () => apiMensagens.fila(escolinhaId, { status }),
+    ...ativo(escolinhaId),
+  });
+}
+
+export function useModelosMensagem() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['modelos-mensagem', escolinhaId],
+    queryFn: () => apiMensagens.modelos(escolinhaId),
+    ...ativo(escolinhaId),
+  });
+}
+
 /* Treinos em que o gestor liberou o atleta bloqueado. Fica na ficha,
    que é onde o gestor revisa depois com calma. */
 export function useLiberacoesAluno(alunoId) {
   return useQuery({
     queryKey: ['liberacoes', alunoId],
     queryFn: () => apiChamada.liberacoesDoAluno(alunoId),
-    ...ativo(alunoId),
+    ...ativo(alunoId)
   });
 }
 

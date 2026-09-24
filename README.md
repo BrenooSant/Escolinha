@@ -50,6 +50,7 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 | **Alunos** | Ficha completa com foto, histórico de presença, responsável e situação da mensalidade |
 | **Financeiro** | Entradas × saídas dos últimos 6 meses, lançamentos de caixa, mensalidades por turma |
 | **Cobranças** | Vencidas, a vencer e pagas; lembrete pronto que abre no WhatsApp e fica registrado |
+| **Mensagens** | Fila do dia pronta: lembrete a vencer, cobrança atrasada e parabéns de aniversário |
 | **Leads** | Funil de interessados, aula experimental, retornos e conversão |
 | **Matrículas** | Fichas recebidas pelo link público, para aprovar ou recusar |
 | **Ajustes** | Dados da escolinha (com CNPJ/CPF), regras de cobrança e planos, link de matrícula, turmas e grade semanal, equipe, conta |
@@ -103,6 +104,32 @@ nome, CPF, IP, navegador, data e hora e o hash SHA-256 do texto, e o gestor
 baixa o PDF na ficha do atleta. Cada edição do contrato é uma versão nova:
 quem já aceitou continua com o texto que leu.
 
+### Mensagens
+
+Lembrar o responsável de pagar e dar parabéns no aniversário são a mesma
+coisa com texto diferente: escolher quem recebe hoje, redigir e registrar o
+que saiu. Por isso os três avisos dividem uma fila só.
+
+Toda manhã o banco monta a fila do dia — quem **vence daqui a N dias**, quem
+**atrasou há N dias** e quem **faz aniversário hoje**. O gestor abre
+Mensagens, revisa o texto e manda; o envio abre o WhatsApp com a mensagem
+pronta e fica registrado. O lembrete de cobrança entra no mesmo histórico de
+sempre, o que a tela de Cobranças já mostra como "último lembrete".
+
+Os modelos são editáveis, com campos que se preenchem sozinhos —
+`{{aluno}}`, `{{valor}}`, `{{vencimento}}`, `{{dias_atraso}}`, `{{pix}}`,
+`{{link}}` (o link pessoal do responsável). Tudo nasce **desligado**.
+
+Dois cuidados que valem mais que parecem: quem está em atraso **não** recebe
+parabéns, porque felicitação e cobrança no mesmo dia queimam a escolinha com
+o responsável; e o texto é gravado na fila quando ela é montada, então mudar
+o modelo amanhã não reescreve o que já estava para sair.
+
+O WhatsApp não envia sozinho — isso exige a Cloud API da Meta, com conta
+verificada e modelo aprovado. O ganho de agora é não precisar mais descobrir
+*quem* cobrar: a lista chega pronta. Quando o envio automático entrar, ele
+consome a mesma fila; a coluna `canal` já existe para isso.
+
 ### Leads
 
 Funil de quem ainda não é aluno: novo → em contato → aula experimental →
@@ -153,10 +180,10 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**296 testes.** Os de unidade cobrem as funções puras de formatação e
-montam num DOM as telas públicas e a chamada, para pegar o que o build
-não pega — import faltando, componente indefinido, quebra na primeira
-pintura.
+**327 testes.** Os de unidade cobrem as funções puras de formatação e
+montam telas num DOM — as públicas e as que têm lógica própria no
+navegador — para pegar o que o build não pega: import faltando,
+componente indefinido, quebra na primeira pintura.
 
 Os de integração rodam contra o projeto Supabase, sem mock: as regras que
 importam (RLS, funções, políticas do Storage) moram no Postgres e só
