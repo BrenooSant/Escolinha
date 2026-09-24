@@ -119,13 +119,41 @@ forem exercitadas no Postgres. Cada arquivo cria a própria escolinha e apaga no
 fim — e a limpeza confere que apagou mesmo, porque `delete` sem permissão
 devolve zero linhas *sem erro*. `fileParallelism: false` de propósito.
 
-As chaves vêm do ambiente ou de `frontend/.env`; sem elas a suíte é **pulada**,
-não falha. Duas contas fixas são reaproveitadas entre rodadas (criadas sozinhas
-na primeira, se a confirmação de e-mail estiver desligada).
+As chaves vêm do ambiente ou de `frontend/.env`. Sem elas a suíte é **pulada**
+num clone qualquer, mas **quebra em CI** (`process.env.CI`, guarda no topo do
+`ajuda.js`): um check verde que não rodou nada afirma que a RLS foi conferida
+quando ninguém conferiu. Duas contas fixas são reaproveitadas entre rodadas
+(criadas sozinhas na primeira, se a confirmação de e-mail estiver desligada).
+
+O CI fala com o **mesmo Supabase que atende os pais** — não há projeto separado.
+Duas consequências: teste de integração escreve no banco de produção (por isso
+cada arquivo apaga o que criou, e confere), e **PR que adiciona migration só
+fica verde depois que o schema sobe**. Vermelho nesse caso costuma significar
+"falta `db:push`", não "o código está errado".
+
+Nada de valor sorteado em teste — nem número de camisa, nem nome. Colide de vez
+em quando e produz vermelho aleatório, que ensina a ignorar vermelho.
 
 Os testes do Asaas exigem `supabase functions serve` no ar mais um servidor
 falso do Asaas em `127.0.0.1:8899` (não versionado, endereço trocável por
 `ASAAS_FALSO`); sem os dois, são pulados — inclusive no CI.
+
+## Migrations e produção
+
+`db:push` sai da **`main`, depois do merge** — nunca de um branch. Aplicar de um
+branch deixa o histórico da nuvem à frente da `main`, e aí o `db:push` de
+qualquer outro branch é recusado com *"Remote migration versions not found in
+local migrations directory"*. Já aconteceu; o conserto foi mergear o branch
+adiantado e trazer a `main` para dentro dos outros.
+
+Quando isso acontecer, **não** rode o `supabase migration repair --status
+reverted` que o CLI sugere: ele marca como revertida uma migration que está
+aplicada, e o push seguinte tenta criar tudo de novo.
+
+A ordem importa nos dois sentidos. O merge dispara o deploy da Netlify na hora;
+o `db:push` é manual. Front novo com schema velho não degrada — o PostgREST
+recusa a coluna que não existe, `exec` lança, e o app não abre para ninguém,
+nem no link público. **Schema primeiro, merge depois.**
 
 ## Publicação
 
