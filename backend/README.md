@@ -17,6 +17,10 @@ supabase/
   config.toml         configuração do ambiente local
 ```
 
+A pasta `migrations/` é a **fonte da verdade do schema**, em ordem
+cronológica — hoje são 24 arquivos, e os nomes acima são só os primeiros.
+Migration já aplicada nunca é editada: cria-se outra.
+
 ## Comandos
 
 Rodados da raiz do repositório:
@@ -42,12 +46,24 @@ supabase --workdir backend link --project-ref SEU_REF
 | Arquivo | O que trava |
 |---|---|
 | `isolamento.test.js` | RLS: o anônimo não lê nada, e um professor não alcança a escolinha do outro |
+| `papeis.test.js` | Gestor × professor — o professor trabalha, mas não vê valor nenhum |
 | `chamada.test.js` | Geração de treinos, marcação, e a conta da frequência caso a caso |
-| `financeiro.test.js` | Mensalidade por aluno, baixa, estorno e o reflexo no caixa |
-| `matricula.test.js` | Link público, validações, upload do responsável e a aprovação |
-| `portal.test.js` | O que o link do responsável mostra — e o que ele nunca pode mostrar |
-| `equipe.test.js` | Convite de uso único, papéis e a proteção do último dono |
+| `bloqueio.test.js` | Os três modos de bloqueio por inadimplência e a liberação do gestor |
 | `avaliacoes.test.js` | Notas, média e o que acontece ao apagar um quesito |
+| `financeiro.test.js` | Mensalidade por aluno, baixa, estorno e o reflexo no caixa |
+| `regras.test.js` | Desconto por pontualidade, multa, juros, planos, irmão e taxa de matrícula |
+| `contas.test.js` | Contas a pagar e a receber: pendência, baixa e recorrência |
+| `asaas.test.js` | Conectar a conta, cobrar pelo link e receber o webhook — contra um Asaas de mentira |
+| `matricula.test.js` | Link público, validações, upload do responsável e a aprovação |
+| `contrato.test.js` | Aceite, hash do texto, versão nova e o que fica guardado de quem assinou |
+| `leads.test.js` | Funil, aula experimental e a conversão em matrícula |
+| `mensagens.test.js` | Quem entra na fila de hoje — e quem não entra |
+| `portal.test.js` | O que o link do responsável mostra, e o que ele nunca pode mostrar |
+| `equipe.test.js` | Convite de uso único, papéis e a proteção do último dono |
+
+Os do Asaas precisam do Asaas de mentira no ar (`npm run asaas:falso`) e das
+funções servidas apontando para ele (`npm run funcoes:servir`); sem os dois,
+são pulados.
 
 ## Isolamento entre escolinhas
 
