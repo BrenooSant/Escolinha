@@ -14,11 +14,18 @@ const FUNCOES = `${URL_SUPABASE}/functions/v1`;
 const ASAAS_FALSO = process.env.ASAAS_FALSO ?? 'http://127.0.0.1:8899';
 const CHAVE = '$aact_hmlg_teste123456789';
 
-/* Só rodam onde existe o par completo: as funções servidas localmente e
-   o Asaas de mentira. Contra a nuvem (ou no CI) são pulados — lá as
-   funções falam com o Asaas de verdade, e chave de teste não vale. */
+/* As funções precisam ser as servidas AQUI, e não as da nuvem: lá elas
+   falam com o Asaas de verdade, onde chave de teste não vale nada.
+
+   Conferir só o 401 não basta, e isso já custou uma hora: a nuvem
+   também devolve 401 nessas rotas (elas estão publicadas), então bastava
+   um Asaas de mentira esquecido rodando nesta máquina para a suíte
+   achar que tinha o par completo. Ela rodava contra funções na nuvem
+   apontando para o Asaas real, e falhava em vez de pular. */
+const EH_LOCAL = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/.test(URL_SUPABASE ?? '');
+
 const noAr = async () => {
-  if (!configurado) return false;
+  if (!configurado || !EH_LOCAL) return false;
   try {
     const [funcao, falso] = await Promise.all([
       fetch(`${FUNCOES}/asaas-webhook`, { method: 'POST' }),
