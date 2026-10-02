@@ -48,3 +48,61 @@ jobs:
           TESTE_EMAIL: ${{ secrets.TESTE_EMAIL }}
           TESTE_EMAIL_2: ${{ secrets.TESTE_EMAIL_2 }}
           TESTE_SENHA: ${{ secrets.TESTE_SENHA }}
+
+  asaas:
+    name: Pagamento (Asaas de mentira)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/testes/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Sobe o stack local: aqui não se fala com o projeto da nuvem nem
+      # com o Asaas de verdade. As migrations e o seed entram junto.
+      - name: Supabase local
+        run: supabase --workdir backend start
+
+      - name: Asaas de mentira
+        run: |
+          nohup node backend/testes/asaas-falso.mjs > /tmp/falso.log 2>&1 &
+          for _ in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8899/__estado >/dev/null && exit 0
+            sleep 1
+          done
+          echo 'o Asaas de mentira não subiu'; cat /tmp/falso.log; exit 1
+
+      # As funções rodam em container. No Mac o host é
+      # host.docker.internal; no Linux esse nome não existe e o caminho
+      # de volta é o gateway da bridge do Docker.
+      - name: Edge Functions apontando para o falso
+        run: |
+          PONTE=$(docker network inspect bridge \
+            -f '{{(index .IPAM.Config 0).Gateway}}' 2>/dev/null || true)
+          PONTE=${PONTE:-172.17.0.1}
+          echo "host visto pelo container: $PONTE"
+          printf 'ASAAS_URL_SANDBOX=http://%s:8899\nASAAS_URL_PRODUCAO=http://%s:8899\n' "$PONTE" "$PONTE" > /tmp/funcoes.env
+          nohup supabase --workdir backend functions serve --env-file /tmp/funcoes.env > /tmp/serve.log 2>&1 &
+          # 401 sem Authorization é a prova de que estão no ar
+          for _ in $(seq 1 45); do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+              http://127.0.0.1:54321/functions/v1/asaas-webhook || true)
+            [ "$codigo" = "401" ] && exit 0
+            sleep 2
+          done
+          echo 'as Edge Functions não subiram'; tail -30 /tmp/serve.log; exit 1
+
+      - name: Testes do pagamento
+        working-directory: backend/testes
+        run: |
+          CHAVE=$(supabase --workdir .. status -o json \
+            | jq -r '.ANON_KEY // .PUBLISHABLE_KEY // empty')
+          if [ -z "$CHAVE" ]; then echo 'não achei a chave local'; exit 1; fi
+          npm ci
+          SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY="$CHAVE" \
+            npx vitest run asaas.test.js

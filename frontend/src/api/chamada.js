@@ -80,16 +80,6 @@ export async function liberar(treinoId, alunoId, motivo) {
   return rpc('liberar_atleta', { p_treino: treinoId, p_aluno: alunoId, p_motivo: motivo });
 }
 
-export async function desfazerLiberacao(treinoId, alunoId) {
-  const linhas = await exec(
-    supabase.from('liberacoes').delete().eq('treino_id', treinoId).eq('aluno_id', alunoId).select('id')
-  );
-  if (!linhas?.length) {
-    throw new Error('Só o gestor pode desfazer a liberação.');
-  }
-  return linhas[0];
-}
-
 /* Histórico da ficha do atleta: quando ele treinou devendo, e por quê. */
 export async function liberacoesDoAluno(alunoId) {
   return exec(

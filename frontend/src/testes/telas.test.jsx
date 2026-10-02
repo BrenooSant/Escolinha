@@ -19,7 +19,6 @@ vi.mock('../api/matriculas.js', () => ({
   escolinhaPorCodigo: vi.fn(),
   enviarFicha: vi.fn(),
   pendentes: vi.fn(),
-  decididas: vi.fn(),
   aprovar: vi.fn(),
   recusar: vi.fn(),
 }));

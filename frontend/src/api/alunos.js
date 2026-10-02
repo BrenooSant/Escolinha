@@ -90,12 +90,6 @@ export async function trocarTokenResponsavel(id) {
   return rpc('trocar_token_responsavel', { p_responsavel: id });
 }
 
-export async function listarResponsaveis(escolinhaId) {
-  return exec(
-    supabase.from('responsaveis').select(COLUNAS_RESPONSAVEL).eq('escolinha_id', escolinhaId).order('nome')
-  );
-}
-
 async function garantirResponsavel(escolinhaId, responsavel) {
   if (responsavel.id) {
     await exec(

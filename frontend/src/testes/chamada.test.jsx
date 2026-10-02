@@ -22,7 +22,6 @@ vi.mock('../api/chamada.js', () => ({
   abrir: vi.fn(),
   salvar: vi.fn(),
   liberar: vi.fn(),
-  desfazerLiberacao: vi.fn(),
   liberacoesDoAluno: vi.fn(),
 }));
 

@@ -207,9 +207,27 @@ Os secrets que o workflow espera são `VITE_SUPABASE_URL` e
 `TESTE_EMAIL_2` e `TESTE_SENHA`). Em pull request vindo de fork o job nem
 roda, porque o GitHub não expõe secret para fork.
 
-Os testes do Asaas rodam contra as funções servidas localmente
-(`supabase functions serve`) e contra um Asaas de mentira, sem chave de
-verdade e sem dinheiro; onde as funções não estiverem no ar, são pulados.
+Os testes do Asaas rodam contra as funções servidas localmente e contra um
+**Asaas de mentira** (`backend/testes/asaas-falso.mjs`, Node puro, sem
+dependência) — sem chave de verdade, sem rede, sem dinheiro. Em três
+terminais:
+
+```bash
+npm run db:start        # 1. o Supabase local
+npm run asaas:falso     # 2. o Asaas de mentira, na 8899
+npm run funcoes:servir  # 3. as Edge Functions apontando para ele
+
+SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY=<a chave local> \
+  npm run test:banco
+```
+
+As funções rodam **dentro de um container**: para elas este computador é
+`host.docker.internal`, e não `127.0.0.1` — que lá dentro é o loopback do
+próprio container. É isso que `backend/testes/funcoes.env` configura. No
+Linux esse nome não existe, e o caminho de volta é o gateway da bridge do
+Docker; o workflow do CI gera o arquivo dele com esse endereço.
+
+Onde esse par não estiver no ar, os testes do Asaas são pulados.
 
 ## Publicação
 
