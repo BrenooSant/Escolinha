@@ -50,7 +50,7 @@ jobs:
           TESTE_SENHA: ${{ secrets.TESTE_SENHA }}
 
   asaas:
-    name: Pagamento (Asaas de mentira)
+    name: Pagamento e nota fiscal (Asaas de mentira)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
           done
           echo 'as Edge Functions não subiram'; tail -30 /tmp/serve.log; exit 1
 
-      - name: Testes do pagamento
+      - name: Testes do pagamento e da nota fiscal
         working-directory: backend/testes
         run: |
           CHAVE=$(supabase --workdir .. status -o json \
@@ -105,4 +105,4 @@ jobs:
           if [ -z "$CHAVE" ]; then echo 'não achei a chave local'; exit 1; fi
           npm ci
           SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY="$CHAVE" \
-            npx vitest run asaas.test.js
+            npx vitest run asaas.test.js nota-fiscal.test.js

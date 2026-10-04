@@ -53,6 +53,7 @@ chamadas, mensalidades e uma pré-matrícula esperando aprovação. Login:
 | **Mensagens** | Fila do dia pronta: lembrete a vencer, cobrança atrasada e parabéns de aniversário |
 | **Leads** | Funil de interessados, aula experimental, retornos e conversão |
 | **Matrículas** | Fichas recebidas pelo link público, para aprovar ou recusar |
+| **Nota fiscal** | NFS-e da mensalidade paga, para quem tem CNPJ — o formulário se monta com o que a prefeitura exige |
 | **Ajustes** | Dados da escolinha (com CNPJ/CPF), regras de cobrança e planos, link de matrícula, turmas e grade semanal, equipe, conta |
 
 ### Cobrança
@@ -92,6 +93,31 @@ backend/supabase/functions/
   asaas-cobranca/   gera (ou reaproveita) a cobrança do link do responsável
   asaas-webhook/    recebe o evento e dá baixa, sem duplicar
 ```
+
+### Nota fiscal
+
+Quem decide é a escolinha. Com **CNPJ** e a conta Asaas conectada, a seção
+Fiscal em Ajustes se abre; com CPF, ela explica que a emissão exige CNPJ e
+para por aí. Assim a pergunta "escolinha de futebol emite nota?" deixa de
+precisar de uma resposta única para todo mundo.
+
+O formulário não é fixo: o Asaas diz quais campos **aquele** município exige,
+e a tela se monta com a resposta — inscrição municipal, certificado, regime,
+o que for. O serviço municipal vem da lista da prefeitura, ou por código
+quando ela não publica lista.
+
+A nota sai da mensalidade **já paga**, pelo botão na ficha do atleta. Nota de
+serviço não prestado é problema fiscal, e a trava fica no servidor, não no
+botão. O número, o PDF e o XML chegam pelo webhook quando a prefeitura
+autoriza; se ela recusar, o erro aparece na ficha e dá para tentar de novo.
+
+Os quatro códigos da **reforma tributária** — NBS, situação, classificação e
+indicador de operação — são escolhidos de listas buscadas no Asaas, nunca
+fixados no código. São obrigatórios para serviços em geral desde 1º de outubro
+de 2026 e para o Simples Nacional a partir de 1º de janeiro de 2027.
+
+Nasce manual e desligada: nota errada é pior que nota nenhuma, porque dá
+trabalho para cancelar e pode gerar imposto indevido.
 
 ### Contrato online
 
@@ -180,7 +206,7 @@ npm run test:unidade  # rápido, sem rede — roda em qualquer lugar
 npm run test:banco    # integração: fala com o Supabase de verdade
 ```
 
-**327 testes.** Os de unidade cobrem as funções puras de formatação e
+**349 testes.** Os de unidade cobrem as funções puras de formatação e
 montam telas num DOM — as públicas e as que têm lógica própria no
 navegador — para pegar o que o build não pega: import faltando,
 componente indefinido, quebra na primeira pintura.

@@ -54,6 +54,7 @@ supabase --workdir backend link --project-ref SEU_REF
 | `regras.test.js` | Desconto por pontualidade, multa, juros, planos, irmão e taxa de matrícula |
 | `contas.test.js` | Contas a pagar e a receber: pendência, baixa e recorrência |
 | `asaas.test.js` | Conectar a conta, cobrar pelo link e receber o webhook — contra um Asaas de mentira |
+| `nota-fiscal.test.js` | O portão do CNPJ, a configuração vinda do município e a emissão da nota |
 | `matricula.test.js` | Link público, validações, upload do responsável e a aprovação |
 | `contrato.test.js` | Aceite, hash do texto, versão nova e o que fica guardado de quem assinou |
 | `leads.test.js` | Funil, aula experimental e a conversão em matrícula |
@@ -61,7 +62,7 @@ supabase --workdir backend link --project-ref SEU_REF
 | `portal.test.js` | O que o link do responsável mostra, e o que ele nunca pode mostrar |
 | `equipe.test.js` | Convite de uso único, papéis e a proteção do último dono |
 
-Os do Asaas precisam do Asaas de mentira no ar (`npm run asaas:falso`) e das
+Os do Asaas e os da nota fiscal precisam do Asaas de mentira no ar (`npm run asaas:falso`) e das
 funções servidas apontando para ele (`npm run funcoes:servir`); sem os dois,
 são pulados.
 

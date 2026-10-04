@@ -104,8 +104,14 @@ cronológica. Nunca edite uma migration já aplicada — crie outra.
   `revoke`, como em `rls.sql`.
 - As regras de cobrança (multa, juros, desconto) são **copiadas para a cobrança
   quando ela nasce**. Mudar a regra hoje não pode alterar o que já foi cobrado.
-- Edge Functions (`functions/asaas-*`) guardam a chave de API da escolinha em
-  `asaas_segredo`, tabela sem policy nenhuma, lida só com a service key.
+- Edge Functions (`functions/asaas-*` e `functions/nf-*`) guardam a chave de API
+  da escolinha em `asaas_segredo`, tabela sem policy nenhuma, lida só com a
+  service key.
+- Nota fiscal: o formulário não é fixo. `GET /fiscalInfo/municipalOptions` diz
+  quais campos **aquele** município exige, e a tela se monta com a resposta —
+  adivinhar um padrão para 5 570 prefeituras seria errar. Os caminhos fiscais
+  do Asaas ficam todos em `FISCAL`, no módulo compartilhado: só o de NBS está
+  na spec OpenAPI pública, os outros vêm da documentação em texto.
 
 ## Testes
 

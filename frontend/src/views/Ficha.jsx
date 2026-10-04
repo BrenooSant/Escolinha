@@ -4,7 +4,7 @@ import {
 } from '../ui.jsx';
 import {
   useAcao, useAvaliacoes, useHistoricoAluno, useLiberacoesAluno, useMensalidadesDoAluno,
-  useResponsavel,
+  useNotasFiscais, useResponsavel, useSituacaoFiscal,
 } from '../hooks/dados.js';
 import { useSessao } from '../estado/Sessao.jsx';
 import * as apiAlunos from '../api/alunos.js';
@@ -12,6 +12,7 @@ import * as apiAvaliacoes from '../api/avaliacoes.js';
 import * as apiFinanceiro from '../api/financeiro.js';
 import * as apiCobranca from '../api/cobranca.js';
 import * as apiContrato from '../api/contrato.js';
+import * as apiFiscal from '../api/fiscal.js';
 import { useQuery } from '@tanstack/react-query';
 import * as apiFotos from '../api/fotos.js';
 import { situacaoMensalidade, tituloCobranca, valorCobranca, ROTULO_MARCA } from '../lib/constantes.js';
@@ -322,6 +323,73 @@ function AbaFicha({ aluno, anos, situacao, onArquivar, onReativar, reativando, g
   );
 }
 
+/* Nota fiscal de uma mensalidade paga.
+
+   O fluxo do Asaas é criada → sincronizada com a prefeitura →
+   autorizada, e número e PDF só existem no fim. Enquanto isso o
+   gestor precisa ver que está a caminho, senão clica de novo achando
+   que não funcionou. */
+function Nota({ mensalidade, nota }) {
+  const toast = useToast();
+
+  const emitir = useAcao(() => apiFiscal.emitir(mensalidade.id), {
+    sucesso: (r) =>
+      toast(
+        r?.repetida
+          ? 'Esta mensalidade já tem nota'
+          : 'Nota pedida — a prefeitura costuma levar alguns minutos'
+      ),
+  });
+
+  if (!nota) {
+    return (
+      <Btn
+        variante="ghost"
+        className="!min-h-9 !text-xs"
+        onClick={() => emitir.mutate()}
+        carregando={emitir.isPending}
+      >
+        Emitir nota
+      </Btn>
+    );
+  }
+
+  if (nota.status === 'AUTHORIZED') {
+    return nota.pdf_url ? (
+      <a
+        href={nota.pdf_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs font-semibold text-accent underline-offset-2 hover:underline"
+      >
+        Nota {nota.numero ?? 'emitida'}
+      </a>
+    ) : (
+      <Tag tom="ok">Nota {nota.numero ?? 'emitida'}</Tag>
+    );
+  }
+
+  if (nota.status === 'ERROR') {
+    return (
+      <>
+        <Tag tom="bad" title={nota.erro ?? ''}>Nota recusada</Tag>
+        <Btn
+          variante="ghost"
+          className="!min-h-9 !text-xs"
+          onClick={() => emitir.mutate()}
+          carregando={emitir.isPending}
+        >
+          Tentar de novo
+        </Btn>
+      </>
+    );
+  }
+
+  if (nota.status === 'CANCELED') return <Tag>Nota cancelada</Tag>;
+
+  return <Tag tom="warn">Nota a caminho</Tag>;
+}
+
 /* Treinos em que o atleta entrou devendo, com o motivo de quem liberou.
    Some quando não houve nenhuma — é a exceção, não uma seção fixa. */
 function Liberacoes({ aluno }) {
@@ -420,6 +488,12 @@ function AbaMensalidades({ aluno, onNovaAvulsa, onCancelar }) {
   const { escolinha } = useSessao();
   const consulta = useMensalidadesDoAluno(aluno.id);
 
+  /* Nota fiscal: as duas consultas são por escolinha e o react-query
+     deduplica, então pedir aqui não multiplica chamada por linha. */
+  const fiscal = useSituacaoFiscal();
+  const notas = useNotasFiscais();
+  const notaDe = (id) => (notas.data ?? []).find((n) => n.mensalidade_id === id);
+
   const baixar = useAcao((id) => apiFinanceiro.registrarPagamento(id), {
     sucesso: (valor) => toast(`Pagamento de ${brl(valor)} registrado — já entrou no caixa`),
   });
@@ -491,6 +565,7 @@ function AbaMensalidades({ aluno, onNovaAvulsa, onCancelar }) {
                   <span className="flex-1" />
                   {m.status === 'paga' ? (
                     <>
+                      {fiscal.data?.ativo && <Nota mensalidade={m} nota={notaDe(m.id)} />}
                       <Btn variante="ghost" className="!min-h-9 !text-xs" onClick={() => recibo(m)}>
                         Recibo em PDF
                       </Btn>
