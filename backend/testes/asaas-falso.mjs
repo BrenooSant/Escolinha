@@ -19,7 +19,7 @@ const PORTA = Number(process.argv[2] ?? process.env.PORTA ?? 8899);
 
 /* Tudo que chegou, na ordem. Os testes leem por /__estado e olham o
    último (`.at(-1)`), então acumular é o comportamento desejado. */
-const estado = { webhooks: [], clientes: [], cobrancas: [], eventos: [] };
+const estado = { webhooks: [], clientes: [], cobrancas: [], eventos: [], fiscal: [], notas: [] };
 let sequencia = 0;
 const novoId = (prefixo) => `${prefixo}_${String(++sequencia).padStart(6, '0')}`;
 
@@ -103,6 +103,86 @@ const servidor = createServer(async (req, res) => {
       ...corpo,
     };
     estado.cobrancas.push(registro);
+    return responder(res, 200, registro);
+  }
+
+  /* ---------------- parte fiscal ---------------- */
+
+  /* O que ESTE município exige. É o endpoint que faz a tela se montar
+     sozinha em vez de adivinhar um formulário para 5 570 prefeituras —
+     então o falso devolve uma lista com cara de lista de verdade. */
+  if (pathname === '/fiscalInfo/municipalOptions' && req.method === 'GET') {
+    return responder(res, 200, {
+      authenticationType: 'CERTIFICATE',
+      municipalInscriptionHelp: 'Inscrição municipal, sem pontos',
+      supportsCancellation: true,
+      requiredFields: [
+        { name: 'municipalInscription', required: true },
+        { name: 'simplesNacional', required: true },
+        { name: 'cnae', required: false },
+        { name: 'specialTaxRegime', required: false },
+        { name: 'certificateFile', required: true },
+        { name: 'certificatePassword', required: true },
+      ],
+    });
+  }
+
+  if (pathname === '/fiscalInfo' && req.method === 'POST') {
+    const registro = { id: novoId('fis'), ...corpo };
+    estado.fiscal.push(registro);
+    return responder(res, 200, registro);
+  }
+
+  if (pathname === '/fiscalInfo/services' && req.method === 'GET') {
+    return responder(res, 200, {
+      data: [
+        { id: 'srv_01', description: 'Ensino desportivo', issTax: 2 },
+        { id: 'srv_02', description: 'Atividades de condicionamento físico', issTax: 3 },
+      ],
+    });
+  }
+
+  /* Listas da reforma tributária. Obrigatórias para serviços em geral
+     desde 01/10/2026 e para o Simples Nacional a partir de 01/01/2027.
+     A documentação pede para consultar, nunca fixar — então o falso
+     também devolve lista, para o código não criar o vício. */
+  const LISTAS = {
+    '/fiscalInfo/nbsCodes': [
+      { code: '1.1401', description: 'Serviços de educação desportiva' },
+      { code: '1.1402', description: 'Serviços recreativos' },
+    ],
+    '/fiscalInfo/taxSituationCodes': [
+      { code: '000', description: 'Tributação integral' },
+      { code: '400', description: 'Isenção' },
+    ],
+    '/fiscalInfo/taxClassificationCodes': [
+      { code: '000001', description: 'Situação tributária padrão' },
+    ],
+    '/fiscalInfo/operationIndicatorCodes': [
+      { code: '1', description: 'Operação tributável' },
+    ],
+  };
+  if (LISTAS[pathname] && req.method === 'GET') {
+    return responder(res, 200, { data: LISTAS[pathname] });
+  }
+
+  if (pathname === '/invoices' && req.method === 'POST') {
+    if (!corpo.municipalServiceName) {
+      return recusar(res, 400, 'Informe o serviço municipal.');
+    }
+    const id = novoId('inv');
+    const registro = {
+      id,
+      status: 'SCHEDULED',
+      // número, PDF e XML só existem depois de a prefeitura autorizar;
+      // quem traz é o webhook
+      number: null,
+      pdfUrl: null,
+      xmlUrl: null,
+      validationCode: null,
+      ...corpo,
+    };
+    estado.notas.push(registro);
     return responder(res, 200, registro);
   }
 

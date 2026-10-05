@@ -16,6 +16,7 @@ import * as apiCobranca from '../api/cobranca.js';
 import * as apiLeads from '../api/leads.js';
 import * as apiAsaas from '../api/asaas.js';
 import * as apiMensagens from '../api/mensagens.js';
+import * as apiFiscal from '../api/fiscal.js';
 
 const ativo = (id) => ({ enabled: Boolean(id) });
 
@@ -98,6 +99,35 @@ export function useLiberacoesAluno(alunoId) {
     queryKey: ['liberacoes', alunoId],
     queryFn: () => apiChamada.liberacoesDoAluno(alunoId),
     ...ativo(alunoId)
+  });
+}
+
+/* Nota fiscal: a situação diz por que não dá para emitir, quando não
+   dá — é com ela que a tela explica o que falta. */
+export function useSituacaoFiscal() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['situacao-fiscal', escolinhaId],
+    queryFn: () => apiFiscal.situacao(escolinhaId),
+    ...ativo(escolinhaId),
+  });
+}
+
+export function useConfigFiscal() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['config-fiscal', escolinhaId],
+    queryFn: () => apiFiscal.config(escolinhaId),
+    ...ativo(escolinhaId),
+  });
+}
+
+export function useNotasFiscais() {
+  const { escolinhaId } = useSessao();
+  return useQuery({
+    queryKey: ['notas-fiscais', escolinhaId],
+    queryFn: () => apiFiscal.notas(escolinhaId),
+    ...ativo(escolinhaId),
   });
 }
 

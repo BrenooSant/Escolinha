@@ -17,6 +17,7 @@ import LinkMatricula from './LinkMatricula.jsx';
 import RegrasCobranca from './RegrasCobranca.jsx';
 import ContratoAjustes from './ContratoAjustes.jsx';
 import PagamentoOnline from './PagamentoOnline.jsx';
+import NotaFiscal from './NotaFiscal.jsx';
 
 export default function Ajustes() {
   const { gestor } = useSessao();
@@ -43,6 +44,7 @@ export default function Ajustes() {
         <DadosEscolinha />
         <RegrasCobranca />
         <PagamentoOnline />
+        <NotaFiscal />
         <ContratoAjustes />
         <LinkMatricula />
         <Turmas />

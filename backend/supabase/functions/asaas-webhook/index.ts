@@ -10,6 +10,19 @@
 import { emCentavos, erro, json, servidor } from '../_compartilhado/asaas.ts';
 
 const RECEBEU = ['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED'];
+
+/* Nota fiscal tem fluxo próprio: criada → sincronizada com a
+   prefeitura → autorizada. Número, PDF e XML só existem no fim. */
+const NOTA = [
+  'INVOICE_CREATED',
+  'INVOICE_UPDATED',
+  'INVOICE_SYNCHRONIZED',
+  'INVOICE_AUTHORIZED',
+  'INVOICE_PROCESSING_CANCELLATION',
+  'INVOICE_CANCELED',
+  'INVOICE_CANCELLATION_DENIED',
+  'INVOICE_ERROR',
+];
 const DESFEZ = [
   'PAYMENT_REFUNDED',
   'PAYMENT_PARTIALLY_REFUNDED',
@@ -33,7 +46,9 @@ Deno.serve(async (req) => {
   if (!evento?.event) return erro('Evento inválido.', 400);
 
   const pagamento = evento.payment ?? {};
-  const idEvento = evento.id ?? `${evento.event}:${pagamento.id}:${pagamento.status}`;
+  const nota = evento.invoice ?? {};
+  const idEvento = evento.id
+    ?? `${evento.event}:${pagamento.id ?? nota.id}:${pagamento.status ?? nota.status}`;
 
   const { error: erroEvento } = await sb.from('asaas_eventos').insert({
     escolinha_id: conta.escolinha_id,
@@ -49,7 +64,19 @@ Deno.serve(async (req) => {
   let falha: string | null = null;
 
   try {
-    if (RECEBEU.includes(evento.event)) {
+    if (NOTA.includes(evento.event)) {
+      const { data } = await sb.rpc('nf_atualizar', {
+        p_asaas_id: nota.id,
+        // o evento é mais confiável que o status quando ele vem vazio
+        p_status: nota.status ?? evento.event.replace('INVOICE_', ''),
+        p_numero: nota.number ?? null,
+        p_pdf: nota.pdfUrl ?? null,
+        p_xml: nota.xmlUrl ?? null,
+        p_codigo: nota.validationCode ?? null,
+        p_erro: nota.statusDescription ?? nota.error ?? null,
+      });
+      resultado = data;
+    } else if (RECEBEU.includes(evento.event)) {
       // o que entrou de fato: o Asaas já somou multa e juros ou tirou o desconto
       const valor = emCentavos(pagamento.netValue ?? pagamento.value ?? 0);
       const { data } = await sb.rpc('asaas_dar_baixa', {

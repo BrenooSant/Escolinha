@@ -93,6 +93,34 @@ export async function anotarErro(sb: SupabaseClient, escolinhaId: string, mensag
     .eq('escolinha_id', escolinhaId);
 }
 
+/* Caminhos da parte fiscal, reunidos aqui de propósito.
+
+   Só `/fiscalInfo/nbsCodes` aparece na spec OpenAPI pública do Asaas;
+   os outros estão descritos em texto na documentação e seguem o mesmo
+   padrão. Juntos num lugar, um caminho errado é uma linha para
+   corrigir — espalhados por três funções, seria uma caçada. */
+export const FISCAL = {
+  opcoesDoMunicipio: '/fiscalInfo/municipalOptions',
+  configuracao:      '/fiscalInfo',
+  servicos:          '/fiscalInfo/services',
+  nbs:               '/fiscalInfo/nbsCodes',
+  situacoes:         '/fiscalInfo/taxSituationCodes',
+  classificacoes:    '/fiscalInfo/taxClassificationCodes',
+  indicadores:       '/fiscalInfo/operationIndicatorCodes',
+  notas:             '/invoices',
+} as const;
+
+/* O gestor desta escolinha, conferido pela RLS e não por nós. */
+export async function ehDono(autorizacao: string, escolinhaId: string): Promise<boolean> {
+  const comoUsuario = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: autorizacao } }, auth: { persistSession: false } }
+  );
+  const { data } = await comoUsuario.rpc('e_dono', { p_escolinha: escolinhaId });
+  return data === true;
+}
+
 export const emReais = (centavos: number) => Number((centavos / 100).toFixed(2));
 export const emCentavos = (reais: number) => Math.round(Number(reais) * 100);
 export const soDigitos = (t: string) => (t ?? '').replace(/\D/g, '');
